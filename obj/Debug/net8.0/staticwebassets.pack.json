@@ -1,0 +1,25 @@
+{
+  "Files": [
+    {
+      "Id": "C:\\Users\\b9870\\OneDrive\\Documents\\Dev\\DotNetAssignment2\\wwwroot\\favicon.ico",
+      "PackagePath": "staticwebassets\\favicon.ico"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.DotNetAssignment2.Microsoft.AspNetCore.StaticWebAssets.props",
+      "PackagePath": "build\\Microsoft.AspNetCore.StaticWebAssets.props"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.build.DotNetAssignment2.props",
+      "PackagePath": "build\\DotNetAssignment2.props"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.buildMultiTargeting.DotNetAssignment2.props",
+      "PackagePath": "buildMultiTargeting\\DotNetAssignment2.props"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.buildTransitive.DotNetAssignment2.props",
+      "PackagePath": "buildTransitive\\DotNetAssignment2.props"
+    }
+  ],
+  "ElementsToRemove": []
+}

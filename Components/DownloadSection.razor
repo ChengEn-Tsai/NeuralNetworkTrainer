@@ -1,0 +1,10 @@
+﻿@inject NavigationManager NavManager
+
+<MudButton OnClick="DownloadFile">Download Text File</MudButton>
+
+@code {
+    private void DownloadFile()
+    {
+        NavManager.NavigateTo("/api/FileDownload/download-text-file", true);
+    }
+}

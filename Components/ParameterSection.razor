@@ -1,0 +1,32 @@
+﻿@inject ISnackbar Snackbar
+
+
+<div style="display: flex; justify-content: center; align-items: center; height: 100%;">
+
+    <MudPaper class="d-flex flex-column" Style="box-shadow: none;">
+        <div class="d-flex flex-column my-5">
+            <MudButton Class="mx-5" Color="Color.Tertiary" Variant="Variant.Filled" @onclick="openInputParameterBox">Input Parameters</MudButton>
+        </div>
+        <div class="d-flex flex-column my-5">
+            <MudButton Class="mx-5" Color="Color.Tertiary" Variant="Variant.Filled" @onclick="openNeuralNetworkParameterBox">Neural Network Parameters</MudButton>
+        </div>
+    </MudPaper>
+</div>
+<!--
+<div style="display: flex; justify-content: center; align-items: center; height: 100%;">
+    <MudButton Class="mx-5" Color="Color.Tertiary" Variant="Variant.Filled" @onclick="openInputParameterBox">Input Parameters</MudButton>
+    <MudButton Class="mx-5" Color="Color.Tertiary" Variant="Variant.Filled" @onclick="openNeuralNetworkParameterBox">Neural Network Parameters</MudButton>
+
+</div>
+-->
+
+@code {
+    private void openInputParameterBox(MouseEventArgs e)
+    {
+        Snackbar.Add("To do: Open input-parameter box.");
+    }
+    private void openNeuralNetworkParameterBox(MouseEventArgs e)
+    {
+        Snackbar.Add("To do: Open neural-network-parameter box.");
+    }
+}

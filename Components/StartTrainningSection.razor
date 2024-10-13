@@ -1,0 +1,19 @@
+﻿@inject ISnackbar Snackbar
+
+<div style="display: flex; justify-content: center; align-items: center; height: 100%;">
+    <MudButton Class="mx-5" Color="Color.Success" @onclick="startTrainning" Variant="Variant.Filled">Train!</MudButton>
+</div>
+
+@code {
+    [Parameter]
+    public Func<bool> FileUpload { get; set; }
+
+    private void startTrainning(MouseEventArgs e)
+    {
+        bool fileUploadResult = FileUpload();
+            if (fileUploadResult)
+            {
+                Snackbar.Add("Start Trainning!", MudBlazor.Severity.Success);
+            }
+    }
+}

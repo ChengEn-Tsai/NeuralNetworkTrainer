@@ -1,0 +1,177 @@
+﻿@using FluentValidation
+
+
+@inject ISnackbar Snackbar
+
+<MudStack Style="width: 100%">
+    @if (selectedFile == null)
+    {
+        <MudForm Model="@_model"
+                 @bind-IsValid="_isValid"
+                 @bind-IsTouched="_isTouched"
+                 Validation="@_validationRules.ValidateValue">
+            <MudItem xs="12">
+                <MudFileUpload T="IReadOnlyList<IBrowserFile>"
+                               @ref="@_fileUpload"
+                               @bind-Files="_model.Files"
+                               For="@(() => _model.Files)"
+                               MaxFiles="1"
+                               Hidden="@false"
+                               InputClass="absolute mud-width-full mud-height-full overflow-hidden z-10"
+                               InputStyle="opacity:0"
+                               ErrorText="@string.Empty"
+                               tabindex="-1"
+                               OnFilesChanged="OnFilesChanged"
+                               @ondrop="@ClearDragClass"
+                               @ondragenter="@SetDragClass"
+                               @ondragleave="@ClearDragClass"
+                               @ondragend="@ClearDragClass">
+                    <ActivatorContent>
+                        <MudPaper Height="300px"
+                                  Outlined="true"
+                                  Class="@_dragClass">
+                            <MudText Typo="Typo.h6">
+                                Drag and drop a CSV file here or click
+                            </MudText>
+                            @foreach (var file in _model.Files?.Select(file => file.Name) ?? Enumerable.Empty<string>())
+                            {
+                                <MudChip T="string" Color="Color.Dark" Text="@file" />
+                            }
+                        </MudPaper>
+                    </ActivatorContent>
+                </MudFileUpload>
+                <MudToolBar Gutters="@false"
+                            Class="relative d-flex justify-end gap-4">
+                    <MudButton Color="Color.Primary"
+                               OnClick="@OpenFilePickerAsync"
+                               Variant="Variant.Filled">
+                        Open file picker
+                    </MudButton>
+                    <MudButton Class="d-none" Color="Color.Primary"
+                               Disabled="!isAbleToUpload"
+                               OnClick="upload"
+                               Variant="Variant.Filled">
+                        Upload
+                    </MudButton>
+                    <MudButton Color="Color.Error"
+                               Disabled="@(_model.Files is null || !_model.Files.Any())"
+                               OnClick="@ClearAsync"
+                               Variant="Variant.Filled">
+                        Clear
+                    </MudButton>
+                </MudToolBar>
+            </MudItem>
+            <MudItem>
+                @if (_fileUpload?.ValidationErrors.Any() ?? false)
+                {
+                    <MudText Color="Color.Error"
+                             Typo="@Typo.caption">
+                        @_fileUpload?.ValidationErrors[0]
+                    </MudText>
+                }
+            </MudItem>
+            <MudItem Class="d-none" xs="12">
+                IsValid: @_isValid - IsTouched: @_isTouched
+            </MudItem>
+        </MudForm>
+    }
+    else
+    {
+        <MudText>{@selectedFile.Name}</MudText>
+    }
+
+</MudStack>
+
+@code {
+    #nullable enable
+    public class Model
+    {
+        public IReadOnlyList<IBrowserFile>? Files { get; set; } = new List<IBrowserFile>();
+    }
+
+    private Model _model = new();
+    private ModelFluentValidator _validationRules = new();
+    private MudFileUpload<IReadOnlyList<IBrowserFile>>? _fileUpload;
+    private bool _isValid;
+    private bool _isTouched;
+    private const string FileContent = "this is content";
+    private const string DefaultDragClass = "relative rounded-lg border-2 border-dashed pa-4 mt-4 mud-width-full mud-height-full";
+    private string _dragClass = DefaultDragClass;
+
+    private bool isAbleToUpload => !(!_isValid || !_isTouched || _model.Files is null || !_model.Files.Any());
+    private IBrowserFile selectedFile;
+
+    public bool Upload()
+    {
+        if (isAbleToUpload)
+        {
+            // Upload the files here
+            Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopCenter;
+            selectedFile = _model.Files[0];
+            Snackbar.Add("The file Name: " + selectedFile.Name);
+            Snackbar.Add("TODO: Upload your files!");
+
+            return true;
+        }
+        else
+        {
+            Snackbar.Add("Please select a file.", MudBlazor.Severity.Warning);
+            return false;
+        }
+    }
+    private void upload ()
+    {
+        Upload();
+    }
+
+    private void SetDragClass()
+        => _dragClass = $"{DefaultDragClass} mud-border-primary";
+
+    private void ClearDragClass()
+        => _dragClass = DefaultDragClass;
+
+    private Task OpenFilePickerAsync()
+        => _fileUpload?.OpenFilePickerAsync() ?? Task.CompletedTask;
+
+    private Task ClearAsync()
+        => _fileUpload?.ClearAsync() ?? Task.CompletedTask;
+
+    private void OnFilesChanged(InputFileChangeEventArgs e)
+    {
+        //Console.WriteLine($"?? File Selected: {_model.Files.FirstOrDefault()?.Name}");
+        var file = e.GetMultipleFiles().FirstOrDefault(); // Get the first file since only 1 is allowed
+
+        if (file != null)
+        {
+            // Check if the file is a .csv
+            if (!file.Name.EndsWith(".csv", StringComparison.OrdinalIgnoreCase))
+            {
+                // Show a warning and clear the file
+                Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopLeft;
+                Snackbar.Add("Only .csv files are allowed.", MudBlazor.Severity.Warning);
+                _model.Files = new List<IBrowserFile>(); // Clear the file
+            }
+            else
+            {
+                // If it's a valid CSV, bind the file
+                _model.Files = new List<IBrowserFile> { file };
+            }
+        }
+    }
+
+    public class ModelFluentValidator : AbstractValidator<Model>
+    {
+        public ModelFluentValidator()
+        {
+            RuleFor(x => x.Files)
+                .NotEmpty()
+                .WithMessage("There must be at least 1 file.");
+        }
+
+        public Func<object, string, Task<IEnumerable<string>>> ValidateValue => async (model, propertyName) =>
+        {
+            var result = await ValidateAsync(ValidationContext<Model>.CreateWithOptions((Model)model, x => x.IncludeProperties(propertyName)));
+            return result.IsValid ? Array.Empty<string>() : result.Errors.Select(e => e.ErrorMessage);
+        };
+    }
+}
