@@ -5,18 +5,17 @@
     <MudItem xs="4">
         <h2>Please select an input file.</h2>
         <div class="content-box">
-            <SingleFileDragAndDropUpload @ref="singleFileDragAndDropUpload" />
+            <SingleFileDragAndDropUpload />
         </div>
     </MudItem>
     <MudItem xs="4">
             <ParameterSection/>
     </MudItem>
     <MudItem xs="4">
-        <StartTrainningSection FileUpload="singleFileDragAndDropUpload.Upload" />
+        <StartTrainningSection />
     </MudItem>
 </MudPaper>
 
 @code {
     // private bool isAbleToUpload;
-    private SingleFileDragAndDropUpload singleFileDragAndDropUpload;
 }

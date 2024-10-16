@@ -1,6 +1,6 @@
 ﻿@using FluentValidation
 
-
+@inject HttpClient Http
 @inject ISnackbar Snackbar
 
 <MudStack Style="width: 100%">
@@ -47,7 +47,7 @@
                                Variant="Variant.Filled">
                         Open file picker
                     </MudButton>
-                    <MudButton Class="d-none" Color="Color.Primary"
+                    <MudButton Class="" Color="Color.Primary"
                                Disabled="!isAbleToUpload"
                                OnClick="upload"
                                Variant="Variant.Filled">
@@ -101,22 +101,46 @@
     private bool isAbleToUpload => !(!_isValid || !_isTouched || _model.Files is null || !_model.Files.Any());
     private IBrowserFile selectedFile;
 
-    public bool Upload()
+    public async Task Upload()
     {
         if (isAbleToUpload)
         {
-            // Upload the files here
-            Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopCenter;
-            selectedFile = _model.Files[0];
-            Snackbar.Add("The file Name: " + selectedFile.Name);
-            Snackbar.Add("TODO: Upload your files!");
+            try
+            {
+                // Upload the files here
+                Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopCenter;
+                selectedFile = _model.Files[0];
+                Snackbar.Add("The file Name: " + selectedFile.Name);
+                Snackbar.Add("TODO: Upload your files!");
+                Console.WriteLine("????");
+                using var content = new MultipartFormDataContent();
+                var fileContent = new StreamContent(selectedFile.OpenReadStream());
+                fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(selectedFile.ContentType);
+                content.Add(fileContent, "file", selectedFile.Name);
+                Console.WriteLine("!!!!");
+                var response = await Http.PostAsync("api/FileUpload/upload", content);
+                Console.WriteLine("After response!");
+                Console.WriteLine("response: " + response.ToString());
+                if (response.IsSuccessStatusCode)
+                {
+                    Snackbar.Add("File uploaded!", MudBlazor.Severity.Success);
+                }
+                else
+                {
+                    Snackbar.Add("File uploaded!", MudBlazor.Severity.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+            Console.WriteLine($"Exception occurred: {ex.Message}");
+            Console.WriteLine(ex.StackTrace);
+            }
+        
 
-            return true;
         }
         else
         {
             Snackbar.Add("Please select a file.", MudBlazor.Severity.Warning);
-            return false;
         }
     }
     private void upload ()

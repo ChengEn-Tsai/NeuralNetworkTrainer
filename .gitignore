@@ -1,0 +1,52 @@
+# Visual Studio folder
+.vs/
+
+# Build results
+bin/
+obj/
+
+# User-specific files
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# ASP.NET Scaffolding
+.scaffolding/
+
+# Visual Studio
+.vscode/
+.vs/
+
+# Windows image file caches
+Thumbs.db
+ehthumbs.db
+
+# Folder config file
+Desktop.ini
+
+# Recycle Bin used on file shares
+$RECYCLE.BIN/
+
+# Logs
+*.log
+
+# .NET Core specific
+project.lock.json
+project.fragment.lock.json
+artifacts/
+packages/
+
+# Rider specific files
+.idea/
+*.sln.iml
+
+# Blazor specific files
+wwwroot/css/
+wwwroot/js/
+wwwroot/dist/
+wwwroot/lib/
+
+# Uploaded files
+UploadedFiles/

@@ -5,15 +5,9 @@
 </div>
 
 @code {
-    [Parameter]
-    public Func<bool> FileUpload { get; set; }
 
     private void startTrainning(MouseEventArgs e)
     {
-        bool fileUploadResult = FileUpload();
-            if (fileUploadResult)
-            {
-                Snackbar.Add("Start Trainning!", MudBlazor.Severity.Success);
-            }
+        Snackbar.Add("Start Trainning!", MudBlazor.Severity.Success);
     }
 }
