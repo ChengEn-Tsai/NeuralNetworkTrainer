@@ -125,7 +125,8 @@
                 Snackbar.Add("TODO: Upload your files!");
                 Console.WriteLine("????");
                 using var content = new MultipartFormDataContent();
-                var fileContent = new StreamContent(selectedFile.OpenReadStream());
+                var maxAllowedSize = 50 * 1024 * 1024; // 10 MB
+                var fileContent = new StreamContent(selectedFile.OpenReadStream(maxAllowedSize));
                 fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(selectedFile.ContentType);
                 content.Add(fileContent, "file", selectedFile.Name);
                 Console.WriteLine("!!!!");

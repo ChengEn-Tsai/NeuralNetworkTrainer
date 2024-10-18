@@ -18,6 +18,7 @@
         <MudSelect 
             Style="width: 500px"
             T="string" 
+            MaxHeight="200"
             Label="Features Selector"
             Placeholder="Please Select"
             MultiSelection="true" 
@@ -28,7 +29,6 @@
             {
                 <MudSelectItem T="string" Value="@label">@label</MudSelectItem>
             }
-            <MudSelectItem T="string" Value="@("asjdfaosdfoaisdfoasdfoasdjjfoasdfojasdf")">asjdfaosdfoaisdfoasdfoasdjjfoasdfojasdf</MudSelectItem>
         </MudSelect>
     </DialogContent>
     <DialogActions>
@@ -82,9 +82,7 @@
 
     protected override async Task OnInitializedAsync()
     {
-        Console.WriteLine("BEFORE~~~");
         await GetFileColumn();
-        Console.WriteLine("AFTER====");
         Console.WriteLine(columns);
     }
 

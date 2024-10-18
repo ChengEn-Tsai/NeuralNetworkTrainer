@@ -28,6 +28,10 @@ public class FileUploadController : ControllerBase
         {
             return BadRequest("This file does not exist.");
         }
+        if (file.Length > 50 * 1024 * 1024) // 50 MB size limit
+        {
+            return BadRequest("File size exceeds the allowed limit.");
+        }
         string timestamp = $"{DateTimeOffset.UtcNow.ToUnixTimeSeconds()}-";
         var filePath = Path.Combine("UploadedFiles", timestamp + file.FileName);
 
