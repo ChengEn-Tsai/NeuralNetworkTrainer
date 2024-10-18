@@ -50,3 +50,8 @@ wwwroot/lib/
 
 # Uploaded files
 UploadedFiles/
+
+# Ignore SQLite database files
+uploads.db
+uploads.db-shm
+uploads.db-wal
