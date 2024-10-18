@@ -1,22 +1,41 @@
 ﻿@page "/main"
 
-
 <MudPaper class="d-flex flex-row">
     <MudItem xs="4">
-        <h2>Please select an input file.</h2>
         <div class="content-box">
-            <SingleFileDragAndDropUpload @ref="singleFileDragAndDropUpload" />
+            <SingleFileDragAndDropUpload changeId="changeId" />
         </div>
     </MudItem>
     <MudItem xs="4">
-            <ParameterSection/>
+        <ParameterSection 
+            Id="Id" 
+            changeLabelAndFS="changeLabelAndFS"
+            SelectedLabel="@selectedLabel" 
+            FeaturesSelector="@selectedFeaturesSelector" 
+        />
     </MudItem>
     <MudItem xs="4">
-        <StartTrainningSection FileUpload="singleFileDragAndDropUpload.Upload" />
+        <StartTrainningSection />
     </MudItem>
 </MudPaper>
 
 @code {
-    // private bool isAbleToUpload;
-    private SingleFileDragAndDropUpload singleFileDragAndDropUpload;
+    // private int ID = 1; // temp
+    private int Id = -1;
+
+    private string selectedLabel { get; set; } = "";
+    private IEnumerable<string> selectedFeaturesSelector { get; set; } = new HashSet<string>();
+
+    private void changeId (int id)
+    {
+        Id = id;
+        StateHasChanged();
+    }
+
+    private void changeLabelAndFS(string label, IEnumerable<string> featuresSelector)
+    {
+        selectedLabel = label;
+        selectedFeaturesSelector = featuresSelector;
+        StateHasChanged();
+    }
 }

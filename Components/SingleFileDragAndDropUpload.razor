@@ -1,11 +1,12 @@
 ﻿@using FluentValidation
 
-
+@inject HttpClient Http
 @inject ISnackbar Snackbar
 
 <MudStack Style="width: 100%">
     @if (selectedFile == null)
     {
+        <h2>Please select an input file.</h2>
         <MudForm Model="@_model"
                  @bind-IsValid="_isValid"
                  @bind-IsTouched="_isTouched"
@@ -47,7 +48,7 @@
                                Variant="Variant.Filled">
                         Open file picker
                     </MudButton>
-                    <MudButton Class="d-none" Color="Color.Primary"
+                    <MudButton Class="" Color="Color.Primary"
                                Disabled="!isAbleToUpload"
                                OnClick="upload"
                                Variant="Variant.Filled">
@@ -77,7 +78,12 @@
     }
     else
     {
-        <MudText>{@selectedFile.Name}</MudText>
+        <h2>The file you selected is: </h2>
+        <h3>@selectedFile.Name</h3>
+        <br/>
+        <MudButton @onclick="ReselectFile" Variant="Variant.Filled" Color="Color.Primary">
+            Select another file.
+        </MudButton>
     }
 
 </MudStack>
@@ -88,6 +94,11 @@
     {
         public IReadOnlyList<IBrowserFile>? Files { get; set; } = new List<IBrowserFile>();
     }
+
+    public int Id { get; set; } = -1;
+
+    [Parameter]
+    public Action<int>? changeId { get; set; }
 
     private Model _model = new();
     private ModelFluentValidator _validationRules = new();
@@ -101,22 +112,57 @@
     private bool isAbleToUpload => !(!_isValid || !_isTouched || _model.Files is null || !_model.Files.Any());
     private IBrowserFile selectedFile;
 
-    public bool Upload()
+    public async Task Upload()
     {
         if (isAbleToUpload)
         {
-            // Upload the files here
-            Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopCenter;
-            selectedFile = _model.Files[0];
-            Snackbar.Add("The file Name: " + selectedFile.Name);
-            Snackbar.Add("TODO: Upload your files!");
+            try
+            {
+                // Upload the files here
+                Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopCenter;
+                selectedFile = _model.Files[0];
+                Snackbar.Add("The file Name: " + selectedFile.Name);
+                Snackbar.Add("TODO: Upload your files!");
+                Console.WriteLine("????");
+                using var content = new MultipartFormDataContent();
+                var maxAllowedSize = 50 * 1024 * 1024; // 10 MB
+                var fileContent = new StreamContent(selectedFile.OpenReadStream(maxAllowedSize));
+                fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(selectedFile.ContentType);
+                content.Add(fileContent, "file", selectedFile.Name);
+                Console.WriteLine("!!!!");
+                var response = await Http.PostAsync("api/FileUpload/upload", content);
+                Console.WriteLine("After response!");
+                Console.WriteLine("response: " + response.Content);
+                if (response.IsSuccessStatusCode)
+                {
+                    var result = await response.Content.ReadFromJsonAsync<UploadResponse>();
 
-            return true;
+                    if (result != null)
+                    {
+                        // statusMessage = $"File uploaded with Id: {result.Id}";
+                        Console.WriteLine($"File uploaded with Id: {result.Id}");
+                        Id = result.Id;
+                        changeId?.Invoke(Id);
+                    }
+
+                    Snackbar.Add("File uploaded!", MudBlazor.Severity.Success);
+                }
+                else
+                {
+                    Snackbar.Add("Upload error!", MudBlazor.Severity.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Exception occurred: {ex.Message}");
+                Console.WriteLine(ex.StackTrace);
+            }
+
+
         }
         else
         {
             Snackbar.Add("Please select a file.", MudBlazor.Severity.Warning);
-            return false;
         }
     }
     private void upload ()
@@ -173,5 +219,19 @@
             var result = await ValidateAsync(ValidationContext<Model>.CreateWithOptions((Model)model, x => x.IncludeProperties(propertyName)));
             return result.IsValid ? Array.Empty<string>() : result.Errors.Select(e => e.ErrorMessage);
         };
+    }
+
+    private class UploadResponse
+    {
+        public string Message { get; set; }
+        public string FileName { get; set; }
+        public int Id { get; set; }
+    }
+    private void ReselectFile(MouseEventArgs e)
+    {
+        selectedFile = null;
+        ClearAsync();
+        Id = -1;
+        changeId?.Invoke(Id);
     }
 }

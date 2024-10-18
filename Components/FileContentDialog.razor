@@ -1,0 +1,110 @@
+﻿@using DotNetAssignment2.Common
+
+@inject NavigationManager NavManager
+@inject HttpClient Http
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <DialogContent>
+
+        <h3>File name: @fileName</h3>
+        <br />
+        @if (dataList.Count == 0)
+        {
+            <MudProgressCircular Color="Color.Default" Indeterminate="true" />
+        }
+        else
+        {
+            <MudTable Items="dataList" Hover="true" SortLabel="Sort By" Elevation="0" AllowUnsorted="false">
+                <HeaderContent>
+                    @foreach (var key in firstKeys)
+                    {
+                        <MudTh>@key</MudTh>
+                    }
+                </HeaderContent>
+                <RowTemplate>
+                    @foreach (var key in firstKeys)
+                    {
+                        <MudTd DataLabel="@key">@context[key]</MudTd>
+                    }
+                </RowTemplate>
+                <PagerContent>
+                    <MudTablePager PageSizeOptions="new int[]{50, 100}" />
+                </PagerContent>
+            </MudTable>
+        }
+    </DialogContent>
+    <DialogActions>
+        <!--<MudButton OnClick="Cancel">Cancel</MudButton>-->
+        <MudButton Color="Color.Primary" OnClick="Submit">Ok</MudButton>
+    </DialogActions>
+</MudDialog>
+@code {
+    [CascadingParameter]
+    private MudDialogInstance MudDialog { get; set; }
+
+    [Parameter]
+    public int id { get; set; }
+
+    private string filePath = "";
+    private string fileName = "";
+    private string? errorMessage;
+
+    private List<Dictionary<string, string>> dataList = new List<Dictionary<string, string>>();
+
+    private List<string> firstKeys = new List<string>();
+
+    private void Submit() => MudDialog.Close(DialogResult.Ok(true));
+
+    private void Cancel() => MudDialog.Cancel();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetFilePath();
+
+        dataList = CsvHelper.ParseCsvToDictionary(filePath);
+
+        firstKeys = dataList[0].Keys.ToList();
+    }
+
+    private async Task GetFilePath()
+    {
+        try
+        {
+            errorMessage = null;
+            var response = await Http.GetAsync($"api/FileUpload/file/path/{id}");
+
+            if (response.IsSuccessStatusCode)
+            {
+                var result = await response.Content.ReadFromJsonAsync<FilePathResponse>();
+
+                if (result != null)
+                {
+                    Console.WriteLine($"FILE PATH: {result.FilePath}");
+                    filePath = result.FilePath;
+                    fileName = result.FileName;
+                }
+            }
+            else if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                errorMessage = "Wrong File Path";
+            }
+            else
+            {
+                errorMessage = "Wrong File Path";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error：{ex.Message}";
+        }
+
+        Snackbar.Add(errorMessage, MudBlazor.Severity.Error);
+    }
+
+    private class FilePathResponse
+    {
+        public string FilePath { get; set; }
+        public string FileName { get; set; }
+    }
+}

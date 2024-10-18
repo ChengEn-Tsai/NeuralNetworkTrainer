@@ -1,0 +1,126 @@
+﻿@using Microsoft.AspNetCore.Components
+@using System.Globalization;
+
+@inject HttpClient Http
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <DialogContent>
+        <MudSelect @bind-Value="Label" Label="Select Label" Placeholder="Please Select" AdornmentColor="Color.Primary">
+            @foreach (var label in columns)
+            {
+                <MudSelectItem Value="label">@label</MudSelectItem>
+            }
+        </MudSelect>
+
+        <br/>
+
+        <MudSelect 
+            Style="width: 500px"
+            T="string" 
+            MaxHeight="200"
+            Label="Features Selector"
+            Placeholder="Please Select"
+            MultiSelection="true" 
+            @bind-Value="featureSelectorValue"
+            @bind-SelectedValues="FeatureSelector"
+        >
+            @foreach (var label in columns.Where(l => l != Label).ToList())
+            {
+                <MudSelectItem T="string" Value="@label">@label</MudSelectItem>
+            }
+        </MudSelect>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" OnClick="Submit">Ok</MudButton>
+    </DialogActions>
+</MudDialog>
+@code {
+    [CascadingParameter]
+    private MudDialogInstance MudDialog { get; set; }
+
+    [Parameter]
+    public int id { get; set; }
+
+    [Parameter]
+    public Action<string, IEnumerable<string>>? changeLabelAndFS { get; set; }
+
+    private string? errorMessage;
+
+    private List<string> columns = new List<string>();
+
+    private void Submit() {
+        changeLabelAndFS?.Invoke(selectedLabel, FeatureSelector);
+        MudDialog.Close(DialogResult.Ok(true));
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private string selectedLabel;
+    [Parameter]
+    public string? Label {
+        get
+        {
+            return selectedLabel;
+        } 
+        set
+        {
+            if (selectedLabel != value)
+            {
+                selectedLabel = value;
+                FeatureSelector = FeatureSelector.Where(l => l != value).ToHashSet();
+            }
+        } 
+    }
+
+    // private List<string> FeatureSelector { get; set; }
+    [Parameter]
+    public IEnumerable<string> FeatureSelector { get; set; } = new HashSet<string>();
+
+    public string featureSelectorValue { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetFileColumn();
+        Console.WriteLine(columns);
+    }
+
+    private async Task GetFileColumn()
+    {
+        try
+        {
+            errorMessage = null;
+            var response = await Http.GetAsync($"api/FileUpload/csv/columns/{id}");
+
+            if (response.IsSuccessStatusCode)
+            {
+                var result = await response.Content.ReadFromJsonAsync<FilePathResponse>();
+
+                if (result != null)
+                {
+                    columns = result.columns;
+                }
+            }
+            else if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                errorMessage = "Wrong File Path";
+            }
+            else
+            {
+                errorMessage = "Wrong File Path";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error：{ex.Message}";
+        }
+
+        Snackbar.Add(errorMessage, MudBlazor.Severity.Error);
+    }
+
+    private class FilePathResponse
+    {
+        public List<string> columns { get; set; }
+    }
+}
