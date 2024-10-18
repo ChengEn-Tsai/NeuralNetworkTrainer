@@ -1,0 +1,84 @@
+﻿@page "/files"
+
+@using System.Text.Json
+@using DotNetAssignment2.Models
+@inject HttpClient Http
+@inject IDialogService DialogService
+
+@if (files == null)
+{
+    <MudProgressCircular Color="Color.Default" Indeterminate="true" />
+}
+else
+{
+    <MudTable Items="files" Hover="true" SortLabel="Sort By" Elevation="0" AllowUnsorted="false">
+        <HeaderContent>
+            <MudTh><MudTableSortLabel InitialDirection="SortDirection.Ascending" SortBy="new Func<UploadedFile, object>(x=>x.Id)">ID</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel InitialDirection="SortDirection.Ascending" SortBy="new Func<UploadedFile, object>(x=>x.UploadTime)">Upload Time</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<UploadedFile, object>(x=>x.FileName)">File Name</MudTableSortLabel></MudTh>
+            <MudTh></MudTh>
+            <MudTh></MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Id">@context.Id</MudTd>
+            <MudTd DataLabel="UploadTime">@context.UploadTime</MudTd>
+            <MudTd DataLabel="FileName">@context.FileName</MudTd>
+            <MudTd DataLabel="Check">
+                <MudButton @onclick="() => OpenDialogAsync(context.Id, context.FileName)" Variant="Variant.Filled" Color="Color.Primary">
+                    Open Simple Dialog
+                </MudButton>
+            </MudTd>
+            <MudTd DataLabel="TrainAgain">Train Again</MudTd>
+        </RowTemplate>
+        <PagerContent>
+            <MudTablePager PageSizeOptions="new int[]{50, 100}" />
+        </PagerContent>
+    </MudTable>
+}
+
+<style>
+    .my-custom-class {
+        backdrop-filter: blur(10px);
+    }
+</style>
+
+@code {
+    private List<UploadedFile> files = new List<UploadedFile>();
+
+    private Task OpenDialogAsync(int id, string filename)
+    {
+        var options = new DialogOptions { BackgroundClass = "my-custom-class" };
+        var parameters = new DialogParameters
+        {
+            { "id", id }
+        };
+        return DialogService.ShowAsync<FileContentDialog>(filename, parameters, options);
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // 直接接收 UploadedFile 的 List
+            files = await Http.GetFromJsonAsync<List<UploadedFile>>("api/FileUpload/files");
+
+            if (files != null && files.Count > 0)
+            {
+                Console.WriteLine("files==========================");
+                foreach (var file in files)
+                {
+                    Console.WriteLine($"ID: {file.Id}, Name: {file.FileName}, Path: {file.FilePath}");
+                }
+            }
+            else
+            {
+                Console.WriteLine("No files found.");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error: {ex.Message}");
+        }
+
+    }
+}
