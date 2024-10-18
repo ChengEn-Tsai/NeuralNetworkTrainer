@@ -12,13 +12,13 @@
 1. **Clone the repository**:
 
    ```bash
-   git clone https://github.com/yourusername/DotNetAssignment2.git
+   git clone https://github.com/ChengEn-Tsai/NeuralNetworkTrainer.git
    ```
 
 2. **Navigate into the project directory**:
 
    ```bash
-   cd DotNetAssignment2
+   cd NeuralNetworkTrainer
    ```
 
 3. **Restore dependencies**:
