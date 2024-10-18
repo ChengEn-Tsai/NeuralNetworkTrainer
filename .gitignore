@@ -47,3 +47,11 @@ wwwroot/css/
 wwwroot/js/
 wwwroot/dist/
 wwwroot/lib/
+
+# Uploaded files
+UploadedFiles/
+
+# Ignore SQLite database files
+uploads.db
+uploads.db-shm
+uploads.db-wal
