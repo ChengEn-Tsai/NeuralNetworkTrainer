@@ -1,0 +1,155 @@
+﻿@inject ISnackbar Snackbar
+
+<MudTable Items="Layers" Hover="true" SortLabel="Sort By" Elevation="0" AllowUnsorted="false">
+    <HeaderContent>
+        <MudTh>Layer</MudTh>
+        <MudTh>P1</MudTh>
+        <MudTh>P2</MudTh>
+        <MudTh>
+            <div style="width: 150px; display: inline-block">
+                <MudSelect @bind-Value="willbeAddedLayerName" Label="Select Layer" Placeholder="Please Select" AdornmentColor="Color.Primary">
+                    @foreach (var layerName in LayerName.All)
+                    {
+                        <MudSelectItem Value="layerName">@layerName</MudSelectItem>
+                    }
+                </MudSelect>
+            </div>
+            <div style="display: inline-block">
+                <MudIconButton Icon="@Icons.Material.Filled.Add" Color="@Color.Success" aria-label="add" OnClick="@AddLayer" />
+            </div>
+        </MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="name">@context.name</MudTd>
+        @if (@context.name == LayerName.Dense)
+        {
+            <MudTd DataLabel="P1">
+                <MudNumericField @bind-Value="((NNTLayer_Dense)context).P1" Label="Please enter an integer" Variant="Variant.Outlined"></MudNumericField>
+            </MudTd>
+            <MudTd DataLabel="P2">
+                <MudSelect @bind-Value="((NNTLayer_Dense)context).P2" Label="Activation function" Placeholder="Please Select" AdornmentColor="Color.Primary">
+                    @foreach (var layerName in ActivationFunction.All)
+                    {
+                        <MudSelectItem Value="layerName">@layerName</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudTd>
+        }
+        else if (@context.name == LayerName.Dropout)
+        {
+            <MudTd DataLabel="P1">
+                <MudNumericField T="float" @bind-Value="((NNTLayer_Dropout)context).P1" Label="Please enter a float from 0 to 1" Variant="Variant.Outlined" Min="0" Max="1"></MudNumericField>
+            </MudTd>
+            <MudTd DataLabel="P2">
+            </MudTd>
+        }
+        else if (@context.name == LayerName.Conv1D)
+        {
+            <MudTd DataLabel="P1">
+                <MudNumericField @bind-Value="((NNTLayer_Conv1D)context).P1" Label="Please enter an integer" Variant="Variant.Outlined"></MudNumericField>
+            </MudTd>
+            <MudTd DataLabel="P2">
+                <MudNumericField @bind-Value="((NNTLayer_Conv1D)context).P2" Label="Please enter an integer" Variant="Variant.Outlined"></MudNumericField>
+            </MudTd>
+        }
+        <MudTd DataLabel="Remove">
+            <MudIconButton Color="@Color.Error" Icon="@Icons.Material.Filled.Remove" aria-label="remove" OnClick="@(() => removeLayer(context))"/>
+        </MudTd>
+    </RowTemplate>
+</MudTable>
+@code {
+    [Parameter]
+    public List<NNTLayer> Layers { get; set; } = new List<NNTLayer>(); // Use the non-generic interface
+
+    private string willbeAddedLayerName = "";
+
+    void AddLayer ()
+    {
+        if (willbeAddedLayerName == "")
+        {
+            Snackbar.Add("Select a layer to add.", MudBlazor.Severity.Warning);
+        }
+        else if (willbeAddedLayerName == LayerName.Dense)
+        {
+            Layers.Add(new NNTLayer_Dense());
+        }
+        else if (willbeAddedLayerName == LayerName.Dropout)
+        {
+            Layers.Add(new NNTLayer_Dropout());
+        }
+        else if (willbeAddedLayerName == LayerName.Conv1D)
+        {
+            Layers.Add(new NNTLayer_Conv1D());
+        }
+    }
+
+    void removeLayer(NNTLayer item)
+    {
+        Layers.Remove(item);
+    }
+
+    public class LayerName
+    {
+        public static string Dense = "Dense";
+        public static string Dropout = "Dropout";
+        public static string Conv1D = "Conv1D";
+        public static List<string> All = new List<string> { Dense, Dropout, Conv1D };
+    }
+
+    public class ActivationFunction
+    {
+        public static string ReLU = "ReLu";
+        public static string Softmax = "Softmax";
+        public static string Sigmoid = "Sigmoid";
+        public static string Tanh = "Tanh";
+        public static List<string> All = new List<string> { ReLU, Softmax, Sigmoid, Tanh };
+    }
+
+    // Non-generic base interface
+    public interface NNTLayer
+    {
+        public string name { get; set; }
+        object P1 { get; }
+        object P2 { get; }
+    }
+
+    // Generic interface extending the base interface
+    public interface NNTLayer<T1, T2> : NNTLayer
+    {
+        public string name { get; set; }
+        T1 P1 { get; set; }
+        T2 P2 { get; set; }
+    }
+
+    // Implementing classes
+    public class NNTLayer_Dense : NNTLayer<int, string>
+    {
+        public string name { get; set; } = "Dense";
+        public int P1 { get; set; }
+        public string? P2 { get; set; } = "";
+
+        object NNTLayer.P1 => P1;
+        object NNTLayer.P2 => P2;
+    }
+
+    public class NNTLayer_Dropout : NNTLayer<float, float?>
+    {
+        public string name { get; set; } = "Dropout";
+        public float P1 { get; set; }
+        public float? P2 { get; set; } = null;
+
+        object NNTLayer.P1 => P1;
+        object NNTLayer.P2 => P2;
+    }
+
+
+    public class NNTLayer_Conv1D : NNTLayer<int, int>
+    {
+        public string name { get; set; } = "Conv1D";
+        public int P1 { get; set; }
+        public int P2 { get; set; }
+
+        object NNTLayer.P1 => P1;
+        object NNTLayer.P2 => P2;
+    }
+}

@@ -12,6 +12,26 @@ namespace DotNetAssignment2.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
+                name: "TrainingForms",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    FilePath = table.Column<string>(type: "TEXT", nullable: true),
+                    Label = table.Column<string>(type: "TEXT", nullable: true),
+                    FeatureSelector = table.Column<string>(type: "TEXT", nullable: true),
+                    Layers = table.Column<string>(type: "TEXT", nullable: true),
+                    Epoch = table.Column<int>(type: "INTEGER", nullable: false),
+                    BatchSize = table.Column<int>(type: "INTEGER", nullable: false),
+                    Optimizer = table.Column<string>(type: "TEXT", nullable: true),
+                    TypeOfTraining = table.Column<string>(type: "TEXT", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_TrainingForms", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "UploadedFiles",
                 columns: table => new
                 {
@@ -30,6 +50,9 @@ namespace DotNetAssignment2.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropTable(
+                name: "TrainingForms");
+
             migrationBuilder.DropTable(
                 name: "UploadedFiles");
         }

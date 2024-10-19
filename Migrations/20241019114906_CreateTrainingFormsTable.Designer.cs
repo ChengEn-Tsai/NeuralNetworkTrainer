@@ -11,14 +11,49 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DotNetAssignment2.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20241018112152_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20241019114906_CreateTrainingFormsTable")]
+    partial class CreateTrainingFormsTable
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.10");
+
+            modelBuilder.Entity("DotNetAssignment2.Models.TrainingForm", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("BatchSize")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Epoch")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("FeatureSelector")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("FilePath")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Label")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Layers")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Optimizer")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("TypeOfTraining")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("TrainingForms");
+                });
 
             modelBuilder.Entity("DotNetAssignment2.Models.UploadedFile", b =>
                 {
