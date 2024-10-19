@@ -6,6 +6,11 @@
 ### Prerequisites
 
 - **.NET 8 SDK** or higher
+- **Entity Framework Core Tools** (If not installed, use the following command)
+
+   ```bash
+   dotnet tool install --global dotnet-ef
+   ```
 
 ### Installation
 
@@ -21,17 +26,42 @@
    cd NeuralNetworkTrainer
    ```
 
-3. **Install the `dotnet-ef` tool globally**:
-
-   ```bash
-   dotnet tool install --global dotnet-ef
-   ```
-
-4. **Restore dependencies**:
+3. **Restore dependencies**:
 
    ```bash
    dotnet restore
    ```
+
+4. **Reset and Rebuild the Database** (Optional, if you need to reset the database):
+
+   1. **Delete existing migrations**:  
+      If there are existing migrations, delete the `Migrations` folder:
+
+      ```bash
+      rm -r Migrations
+      ```
+
+   2. **Drop the existing database**:
+
+      ```bash
+      dotnet ef database drop
+      ```
+
+      This will delete the entire database.
+
+   3. **Add a new initial migration**:
+
+      ```bash
+      dotnet ef migrations add InitialCreate
+      ```
+
+   4. **Update the database**:
+
+      ```bash
+      dotnet ef database update
+      ```
+
+      This will recreate the database with the latest schema.
 
 5. **Run the project**:
 
@@ -40,27 +70,3 @@
    ```
 
    This will launch the application and automatically watch for changes.
-
----
-
-### Database Management
-
-If you need to drop and recreate the database:
-
-1. **Drop the database**:
-
-   ```bash
-   dotnet ef database drop
-   ```
-
-2. **Apply migrations and recreate the database**:
-
-   ```bash
-   dotnet ef database update
-   ```
-
----
-
-## License
-
-This project is licensed under the MIT License. See the `LICENSE` file for details.
