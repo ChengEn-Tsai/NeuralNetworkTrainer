@@ -1,34 +1,65 @@
-﻿@page "/main"
+﻿@page "/main/{FileId:int?}"
+@using Microsoft.AspNetCore.WebUtilities
+@inject NavigationManager NavManager
+@inject HttpClient Http
 
 <MudPaper class="d-flex flex-row">
     <MudItem xs="4">
         <div class="content-box">
-            <SingleFileDragAndDropUpload changeId="changeId" />
+            @if (FileName != "")
+            {
+                <h2>The file you selected is: </h2>
+                <h3>@FileName</h3>
+            }
+            else
+            {
+                <SingleFileDragAndDropUpload changeId="@changeId" />
+            }
         </div>
     </MudItem>
     <MudItem xs="4">
         <ParameterSection 
             Id="Id" 
-            changeLabelAndFS="changeLabelAndFS"
+            changeLabelAndFS="@changeLabelAndFS"
             SelectedLabel="@selectedLabel" 
             FeaturesSelector="@selectedFeaturesSelector" 
-        />
+            Parameters="@nNTParameters"
+            changeNNTParameter="@changeNNTParameter" />
+
     </MudItem>
     <MudItem xs="4">
-        <StartTrainningSection />
+        <StartTrainingSection 
+            FilePath="@FilePath" 
+            Label="@selectedLabel"
+            FeaturesSelector="@string.Join(",", selectedFeaturesSelector)"
+            NNTParameters="@nNTParameters"
+        />
     </MudItem>
 </MudPaper>
 
 @code {
+    [Parameter]
+    public int FileId { get; set; }
     // private int ID = 1; // temp
     private int Id = -1;
+    private string FilePath = "";
+    private string FileName = "";
 
     private string selectedLabel { get; set; } = "";
     private IEnumerable<string> selectedFeaturesSelector { get; set; } = new HashSet<string>();
 
-    private void changeId (int id)
+    public NNTParameterDialog.NNTParameters nNTParameters { get; set; } = new NNTParameterDialog.NNTParameters();
+
+    private void changeId (int id, string filePath)
     {
         Id = id;
+        FilePath = filePath;
+        StateHasChanged();
+    }
+
+    private void changeNNTParameter(NNTParameterDialog.NNTParameters nntParameters)
+    {
+        nNTParameters = nntParameters;
         StateHasChanged();
     }
 
@@ -37,5 +68,56 @@
         selectedLabel = label;
         selectedFeaturesSelector = featuresSelector;
         StateHasChanged();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (FileId > 0)
+        {
+            bool result = await CheckFilePath();
+            if (!result)
+            {
+                NavManager.NavigateTo("/Main");
+            }
+        }
+    }
+
+    private async Task<bool> CheckFilePath()
+    {
+        try
+        {
+            var response = await Http.GetAsync($"api/FileUpload/file/path/{FileId}");
+
+            if (response.IsSuccessStatusCode)
+            {
+                var result = await response.Content.ReadFromJsonAsync<FilePathResponse>();
+
+                if (result != null)
+                {
+                    Id = FileId;
+                    FilePath = result.FilePath;
+                    FileName = result.FileName;
+                }
+                return true;
+            }
+            else if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                return false;
+            }
+            else
+            {
+                return false;
+            }
+        }
+        catch (Exception ex)
+        {
+            return false;
+        }
+    }
+
+    private class FilePathResponse
+    {
+        public string FilePath { get; set; }
+        public string FileName { get; set; }
     }
 }

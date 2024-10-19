@@ -54,7 +54,8 @@ public class FileUploadController : ControllerBase
 
         return Ok(new { 
             Message = "File uploaded!", 
-            FileName = file.FileName, 
+            FileName = file.FileName,
+            FilePath = uploadedFile.FilePath,
             Id = uploadedFile.Id 
         });
     }

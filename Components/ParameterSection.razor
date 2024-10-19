@@ -7,11 +7,18 @@
             <MudButton Disabled="disabled" Class="mx-5" Color="Color.Tertiary" Variant="Variant.Filled" @onclick="OpenInputParameterDialogAsync">Input Parameters</MudButton>
         </div>
         <div class="d-flex flex-column my-5" style="text-align: center; margin: 10px;">
-            <p><span style="color: darkorange">Selected Label:</span> @SelectedLabel</p>
-            <p><span style="color: darkorange">Features Selector:</span> @string.Join(", ", FeaturesSelector)</p>
+            @if (SelectedLabel != "")
+            {
+                <p><span style="color: darkorange">Selected Label:</span> @SelectedLabel</p>
+            }
+            @if (string.Join(", ", FeaturesSelector) != "")
+            {
+                <p><span style="color: darkorange">Features Selector:</span> @string.Join(", ", FeaturesSelector)</p>
+            }
         </div>
         <div class="d-flex flex-column my-5">
-            <MudButton Disabled="disabled" Class="mx-5" Color="Color.Tertiary" Variant="Variant.Filled" @onclick="openNeuralNetworkParameterBox">Neural Network Parameters</MudButton>
+            <MudButton Disabled="disabled" Class="mx-5" Color="Color.Tertiary" Variant="Variant.Filled" @onclick="OpenNeuralNetworkParameterDialogAsync">Neural Network Parameters</MudButton>
+            
         </div>
     </MudPaper>
 </div>
@@ -36,6 +43,12 @@
     [Parameter]
     public Action<string, IEnumerable<string>>? changeLabelAndFS { get; set; }
 
+    [Parameter]
+    public Action<NNTParameterDialog.NNTParameters> changeNNTParameter { get; set; }
+
+    [Parameter]
+    public NNTParameterDialog.NNTParameters Parameters { get; set; } = new NNTParameterDialog.NNTParameters();
+
     private bool disabled => Id == -1;
     private string inputParameterKey => "inputParameterKey" + Id;
     private string NNTParameterKey => "NNTParameterKey" + Id;
@@ -54,8 +67,15 @@
     }
 
 
-    private void openNeuralNetworkParameterBox(MouseEventArgs e)
+    private Task OpenNeuralNetworkParameterDialogAsync()
     {
-        Snackbar.Add("To do: Open neural-network-parameter box.");
+        var options = new DialogOptions { BackgroundClass = "my-custom-class", FullScreen = true };
+        var parameters = new DialogParameters
+        {
+            {"Parameters", Parameters },
+            {"changeNNTParameter", changeNNTParameter}
+        };
+        return DialogService.ShowAsync<NNTParameterDialog>("Input Parameters", parameters, options);
+
     }
 }

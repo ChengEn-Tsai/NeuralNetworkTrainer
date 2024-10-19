@@ -7,6 +7,8 @@ namespace DotNetAssignment2.Data
     {
         public DbSet<UploadedFile> UploadedFiles { get; set; }
 
+        public DbSet<TrainingForm> TrainingForms { get; set; }
+
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
         {
         }
