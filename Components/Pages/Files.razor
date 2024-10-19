@@ -4,6 +4,7 @@
 @using DotNetAssignment2.Models
 @inject HttpClient Http
 @inject IDialogService DialogService
+@inject NavigationManager NavManager
 
 @if (files == null)
 {
@@ -28,7 +29,11 @@ else
                     Open Simple Dialog
                 </MudButton>
             </MudTd>
-            <MudTd DataLabel="TrainAgain">Train Again</MudTd>
+            <MudTd DataLabel="TrainAgain">
+                <MudButton @onclick="() => trainAgain(context.Id)" Variant="Variant.Filled" Color="Color.Primary">
+                    Train Again
+                </MudButton>
+            </MudTd>
         </RowTemplate>
         <PagerContent>
             <MudTablePager PageSizeOptions="new int[]{50, 100}" />
@@ -55,6 +60,11 @@ else
         return DialogService.ShowAsync<FileContentDialog>(filename, parameters, options);
     }
 
+    private void trainAgain (int id)
+    {
+        NavManager.NavigateTo("/Main/"+id);
+    }
+
     protected override async Task OnInitializedAsync()
     {
         try
@@ -64,7 +74,6 @@ else
 
             if (files != null && files.Count > 0)
             {
-                Console.WriteLine("files==========================");
                 foreach (var file in files)
                 {
                     Console.WriteLine($"ID: {file.Id}, Name: {file.FileName}, Path: {file.FilePath}");

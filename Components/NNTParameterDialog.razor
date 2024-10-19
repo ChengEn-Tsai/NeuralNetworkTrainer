@@ -1,0 +1,102 @@
+﻿@using Microsoft.AspNetCore.Components
+@using System.Globalization;
+
+@inject HttpClient Http
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <DialogContent>
+        <MudPaper Class="d-flex flex-row justify-content-between" Style="width: 100%;">
+            <MudItem class="flex-4 flex-grow-1" Style="max-width: 70%">
+                <NNTLayers Layers="@Parameters.Layers" @ref="nNTLayers" />
+            </MudItem>
+
+            <MudItem class="flex-1 flex-grow-1">
+                <div style="width: 100%; text-align: center; margin: 20px">
+                    <MudNumericField T="int" @bind-Value="Parameters.Epoch" Label="Epoch" Variant="Variant.Outlined" Min="0"></MudNumericField>
+                    <br/>
+                    <MudNumericField T="int" @bind-Value="Parameters.BatchSize" Label="BatchSize" Variant="Variant.Outlined" Min="0"></MudNumericField>
+                    <br />
+                    <MudSelect @bind-Value="Parameters.Optimizer" Label="Optimizer" Placeholder="Please Select" AdornmentColor="Color.Primary">
+                        @foreach (var name in OptimizerName.All)
+                        {
+                            <MudSelectItem Value="name">@name</MudSelectItem>
+                        }
+                    </MudSelect>
+                    <br/>
+                    <br />
+                    <MudText>Type of trainning selector:</MudText>
+                    <MudToggleGroup @bind-Value="Parameters.TypeOfTraining" T="string" Outlined="@true" Delimiters="@true" Size="@Size.Medium" Color="@Color.Primary" Rounded="@false" CheckMark="@false" FixedContent="@false" Disabled="@false" Style="width: 30rem">
+                        @foreach (var option in TypeOfTrainingOption.All)
+                        {
+                            <MudToggleItem Value="@option" />
+                        }
+                    </MudToggleGroup>
+                </div>
+            </MudItem>
+        </MudPaper>
+        
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" OnClick="Submit">Ok</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private MudDialogInstance MudDialog { get; set; }
+
+    [Parameter]
+    public NNTParameters Parameters { get; set; }
+
+    [Parameter]
+    public Action<NNTParameterDialog.NNTParameters> changeNNTParameter { get; set; }
+
+    private NNTLayers nNTLayers;
+    private void getLayers()
+    {
+        Parameters.Layers = nNTLayers.Layers;
+    }
+
+    private void Submit()
+    {
+        // changeLabelAndFS?.Invoke(selectedLabel, FeatureSelector);
+
+        getLayers();
+        MudDialog.Close(DialogResult.Ok(true));
+        changeNNTParameter(Parameters);
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+
+    public class NNTParameters
+    {
+        public List<NNTLayers.NNTLayer> Layers { get; set; } = new List<NNTLayers.NNTLayer>();
+
+        public int Epoch { get; set; }
+
+        public int BatchSize { get; set; }
+
+        public string? Optimizer { get; set; }
+
+        public string? TypeOfTraining { get; set; }
+
+    }
+
+    public class OptimizerName
+    {
+        public static string Adam = "Adam";
+        public static string Adagrad = "Adagrad";
+        public static string SGD = "SGD";
+        public static List<string> All = new List<string> { Adam, Adagrad, SGD };
+    }
+
+    public class TypeOfTrainingOption
+    {
+        public static string Classification = "classification";
+        public static string Regression = "regression";
+        public static List<string> All = new List<string> { Classification, Regression };
+    }
+}
