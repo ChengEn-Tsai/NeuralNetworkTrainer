@@ -24,18 +24,13 @@ public class NeuralNetworkController : ControllerBase
         {
             if (form == null)
             {
-                Console.WriteLine("===============NULL FORM!!!!!!!!!!");
                 return BadRequest("Invalid form data.");
             }
-            Console.WriteLine("===============1111111111!!!!!!!!!!");
             // TODO: Training part
             Train(form);
-            Console.WriteLine("===============22222222222!!!!!!!!!!");
             // save in db
             _dbContext.TrainingForms.Add(form);
-            Console.WriteLine("===============3333333333!!!!!!!!!!");
             await _dbContext.SaveChangesAsync();
-            Console.WriteLine("===============44444444444!!!!!!!!!!");
             return Ok(new { Message = "Training form saved successfully!" });
         }
         catch (Exception ex)
