@@ -10,6 +10,7 @@
   <ItemGroup>
     <PackageReference Include="FluentValidation" Version="11.10.0" />
     <PackageReference Include="Microsoft.AspNetCore.WebUtilities" Version="8.0.10" />
+    <PackageReference Include="Microsoft.Data.analysis" Version="0.21.1" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.10" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.10">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -21,5 +22,8 @@
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="MudBlazor" Version="7.*" />
+    <PackageReference Include="SciSharp.TensorFlow.Redist" Version="2.16.0" />
+    <PackageReference Include="tensorflow.keras" Version="0.15.0" />
+    <PackageReference Include="tensorflow.net" Version="0.150.0" />
   </ItemGroup>
 </Project>
