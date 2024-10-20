@@ -209,7 +209,6 @@ namespace DotNetAssignment2
             else (featuresNp, labelNp) = divideDatasetReg(df);
             print(labelNp);
             print(featuresNp);
-            Console.ReadKey();
             CallbackParams parameters = new CallbackParams();
             parameters.Model = model;
 
