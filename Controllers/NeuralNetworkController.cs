@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using DotNetAssignment2;
 using DotNetAssignment2.Data;
 using DotNetAssignment2.Models;
+using Microsoft.VisualBasic;
 
 [Route("api/[controller]")]
 [ApiController]
@@ -45,11 +46,15 @@ public class NeuralNetworkController : ControllerBase
     {
         //TODO: GO TRAINING
         bool isClassification = form.TypeOfTraining == "classification";
-        NeuralNetwork nn = new NeuralNetwork(layers: form.Layers.ToArray<string>(), form.Epoch,
+
+        CsvNeuralNetwork nn = new CsvNeuralNetwork(form.Layers.ToArray<string>(), form.Epoch,
             batchSize: form.BatchSize,
-            isClassification: isClassification, form.Label, path: form.FilePath, form.FeatureSelector);
-        nn.loadDataset();
-        nn.buildModel();
-        nn.trainModel();
+            isClassification: isClassification,
+            form.Label, 
+            pathToDataset: form.FilePath, 
+            form.FeatureSelector);
+        nn.LoadDataset();
+        nn.BuildModel();
+        nn.TrainModel();
     }
 }
