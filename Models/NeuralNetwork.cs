@@ -1,4 +1,5 @@
 ﻿using Microsoft.Data.Analysis;
+using System.Diagnostics;
 using Tensorflow;
 using Tensorflow.Keras;
 using Tensorflow.Keras.Callbacks;
@@ -254,12 +255,14 @@ public class CsvNeuralNetwork : BaseNeuralNetwork
 
         var callbacks = new List<ICallback>
         {
-            new EarlyStopping(parameters, patience: 50, restore_best_weights: true)
+            new EarlyStopping(parameters, patience: 50, restore_best_weights: true),
+            new GetValue(parameters)
         };
         bool useMultiprocessing = Environment.GetEnvironmentVariable("USE_MULTIPROCESSING") == "true";
         Console.WriteLine($"Using multiprocessing: {useMultiprocessing}");
         Model.fit(featuresNp, labelNp, BatchSize, Epochs, validation_split: 0.4f, callbacks: callbacks, use_multiprocessing: useMultiprocessing);
         Console.WriteLine("Model training completed");
+
     }
 
     public override void TestModel(float[] args)
@@ -412,4 +415,97 @@ public class CsvNeuralNetwork : BaseNeuralNetwork
         Console.WriteLine("Categorical encoding completed");
         return df;
     }
+}
+
+public class GetValue : ICallback
+{
+    CallbackParams _parameters;
+
+    public Dictionary<string, List<float>> history { get; set; }
+
+    public GetValue(CallbackParams parameters)
+    {
+        _parameters = parameters;
+    }
+
+    public void on_train_begin()
+    {
+        ValueGetter.Accuracy = new List<float>();
+        ValueGetter.Loss = new List<float>();
+        ValueGetter.ValAccuracy = new List<float>();
+        ValueGetter.ValLoss = new List<float>();
+
+    }
+    public void on_train_end() { }
+    public void on_test_begin()
+    {
+    }
+    public void on_epoch_begin(int epoch)
+    {
+    }
+
+    public void on_train_batch_begin(long step)
+    {
+    }
+
+    public void on_train_batch_end(long end_step, Dictionary<string, float> logs)
+    {
+    }
+
+    public void on_epoch_end(int epoch, Dictionary<string, float> epoch_logs)
+    {
+        ValueGetter.Loss.Add(epoch_logs["loss"]);
+        ValueGetter.ValLoss.Add(epoch_logs["val_loss"]);
+        try
+        {
+            ValueGetter.Accuracy.Add(epoch_logs["accuracy"]);
+            ValueGetter.ValAccuracy.Add(epoch_logs["val_accuracy"]);
+        }
+        catch
+        {
+            ValueGetter.Accuracy.Add(epoch_logs["mean_absolute_error"]);
+            ValueGetter.ValAccuracy.Add(epoch_logs["val_mean_absolute_error"]);
+        }
+    }
+
+
+    public void on_predict_begin()
+    {
+    }
+
+    public void on_predict_batch_begin(long step)
+    {
+
+    }
+
+    public void on_predict_batch_end(long end_step, Dictionary<string, Tensors> logs)
+    {
+
+    }
+
+    public void on_predict_end()
+    {
+
+    }
+
+    public void on_test_batch_begin(long step)
+    {
+    }
+    public void on_test_batch_end(long end_step, Dictionary<string, float> logs)
+    {
+    }
+
+    public void on_test_end(Dictionary<string, float> logs)
+    {
+    }
+}
+
+public static class ValueGetter
+{ // a class for stocking the values we want to display during the training
+    public static List<float> Loss = new List<float>();
+    public static List<float> Accuracy = new List<float>();
+    public static List<float> ValLoss = new List<float>();
+    public static List<float> ValAccuracy = new List<float>();
+
+    
 }
