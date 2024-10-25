@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 using DotNetAssignment2;
 using DotNetAssignment2.Data;
 using DotNetAssignment2.Models;
-using Microsoft.VisualBasic;
 
 [Route("api/[controller]")]
 [ApiController]
@@ -28,33 +27,72 @@ public class NeuralNetworkController : ControllerBase
             {
                 return BadRequest("Invalid form data.");
             }
-            // TODO: Training part
-            Train(form);
-            // save in db
+
+            // Reset training state
+            ValueGetter.Reset();
+
+            // Start training asynchronously
+            _ = Task.Run(() => Train(form));
+
+            // Save the form in the database
             _dbContext.TrainingForms.Add(form);
             await _dbContext.SaveChangesAsync();
-            return Ok(new { Message = "Training form saved successfully!" });
+
+            return Ok(new { Message = "Training started successfully!" });
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"~~~~~~~~~~~~~Error: {ex.Message}");
-            return StatusCode(500, new { Message = "Error saving form data.", Error = ex.Message });
+            Console.WriteLine($"Error: {ex.Message}");
+            return StatusCode(500, new { Message = "Error starting training.", Error = ex.Message });
         }
     }
 
-    private async Task Train(TrainingForm form)
+    // GET: Get real-time training metrics
+    [HttpGet]
+    [Route("status")]
+    public IActionResult GetTrainingMetrics()
     {
-        //TODO: GO TRAINING
-        bool isClassification = form.TypeOfTraining == "classification";
+        var metrics = new
+        {
+            Loss = ValueGetter.Loss.LastOrDefault(),
+            Accuracy = ValueGetter.Accuracy.LastOrDefault(),
+            ValLoss = ValueGetter.ValLoss.LastOrDefault(),
+            ValAccuracy = ValueGetter.ValAccuracy.LastOrDefault(),
+            Epoch = ValueGetter.Loss.Count, // Assuming Loss count is equivalent to epochs processed
+            IsTrainingComplete = ValueGetter.IsTrainingComplete
+        };
 
-        CsvNeuralNetwork nn = new CsvNeuralNetwork(form.Layers.ToArray<string>(), form.Epoch,
-            batchSize: form.BatchSize,
-            isClassification: isClassification,
-            form.Label, 
-            pathToDataset: form.FilePath, 
-            form.FeatureSelector);
-        nn.LoadDataset();
-        nn.BuildModel();
-        nn.TrainModel();
+        return Ok(metrics);
+    }
+
+    private void Train(TrainingForm form)
+    {
+        try
+        {
+            bool isClassification = form.TypeOfTraining == "classification";
+
+            var nn = new CsvNeuralNetwork(
+                form.Layers.ToArray(),
+                form.Epoch,
+                batchSize: form.BatchSize,
+                isClassification: isClassification,
+                targetClass: form.Label,
+                pathToDataset: form.FilePath,
+                featuresToKeep: form.FeatureSelector
+            );
+
+            nn.LoadDataset();
+            nn.BuildModel();
+            nn.TrainModel();
+
+            // Set training as complete
+            ValueGetter.IsTrainingComplete = true;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Training failed: {ex.Message}");
+            // Mark training as complete even if it failed
+            ValueGetter.IsTrainingComplete = true;
+        }
     }
 }

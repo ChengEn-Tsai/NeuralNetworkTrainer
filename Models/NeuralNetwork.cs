@@ -507,5 +507,16 @@ public static class ValueGetter
     public static List<float> ValLoss = new List<float>();
     public static List<float> ValAccuracy = new List<float>();
 
-    
+    // New property to track training completion
+    public static bool IsTrainingComplete { get; set; } = false;
+
+    // Method to reset the training state
+    public static void Reset()
+    {
+        Loss = new List<float>();
+        Accuracy = new List<float>();
+        ValLoss = new List<float>();
+        ValAccuracy = new List<float>();
+        IsTrainingComplete = false;
+    }
 }
