@@ -4,12 +4,14 @@ using System.Threading.Tasks;
 using DotNetAssignment2;
 using DotNetAssignment2.Data;
 using DotNetAssignment2.Models;
+using Tensorflow.Keras;
 
 [Route("api/[controller]")]
 [ApiController]
 public class NeuralNetworkController : ControllerBase
 {
     private readonly AppDbContext _dbContext;
+    private static INeuralNetwork? CurrentModel; // Static variable to hold the current model
 
     public NeuralNetworkController(AppDbContext dbContext)
     {
@@ -65,6 +67,121 @@ public class NeuralNetworkController : ControllerBase
         return Ok(metrics);
     }
 
+    // GET: Retrieve features from the current model
+    [HttpGet]
+    [Route("features")]
+    public IActionResult GetFeatures()
+    {
+        try
+        {
+            if (CurrentModel == null)
+            {
+                return NotFound("No model is currently loaded or trained.");
+            }
+
+            if (CurrentModel is CsvNeuralNetwork csvNN)
+            {
+                var features = csvNN.GetFeatures();
+                return Ok(features);
+            }
+            else
+            {
+                return BadRequest("Current model does not support feature retrieval.");
+            }
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, $"Error retrieving features: {ex.Message}");
+        }
+    }
+
+    // POST: Handle prediction requests
+    [HttpPost]
+    [Route("predict")]
+    public IActionResult Predict([FromBody] PredictionRequest request)
+    {
+        try
+        {
+            if (CurrentModel == null)
+            {
+                return NotFound("No model is currently loaded or trained.");
+            }
+
+            var featureList = CurrentModel.GetFeatures();
+
+            // Correct usage of Count as a property, not a method
+            if (request.Features == null || request.Features.Length != featureList.Count)
+            {
+                return BadRequest($"Expected {featureList.Count} features, but received {request.Features?.Length ?? 0}.");
+            }
+
+            // Perform prediction
+            CurrentModel.TestModel(request.Features);
+
+            // Retrieve the prediction result
+            string predictionResult = CurrentModel.GetLastPrediction();
+
+            return Ok(new PredictionResponse { Prediction = predictionResult });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, $"Prediction error: {ex.Message}");
+        }
+    }
+
+    // POST: Load a pretrained model
+    [HttpPost]
+    [Route("load-model")]
+    public IActionResult LoadModel([FromBody] LoadModelRequest request)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(request.ModelPath))
+            {
+                return BadRequest("Model path is required.");
+            }
+
+            // Load the model
+            var nn = new CsvNeuralNetwork(
+                layers: new List<ILayer>(), // Initialize with appropriate layers if necessary
+                epochs: 0,
+                batchSize: 0,
+                isClassification: false, // Set appropriately based on your model
+                targetClass: "", // Set appropriately
+                pathToDataset: "", // Not needed for loading
+                featuresToKeep: "" // Not needed if already loaded
+            );
+
+            nn.LoadModel(request.ModelPath);
+
+            // Set the loaded model as the current model
+            CurrentModel = nn;
+
+            return Ok(new { Message = "Model loaded successfully." });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, $"Error loading model: {ex.Message}");
+        }
+    }
+
+    // Models for prediction request and response
+    public class PredictionRequest
+    {
+        public float[] Features { get; set; }
+    }
+
+    public class PredictionResponse
+    {
+        public string Prediction { get; set; }
+    }
+
+    // Model for load model request
+    public class LoadModelRequest
+    {
+        public string ModelPath { get; set; }
+    }
+
     private void Train(TrainingForm form)
     {
         try
@@ -84,6 +201,9 @@ public class NeuralNetworkController : ControllerBase
             nn.LoadDataset();
             nn.BuildModel();
             nn.TrainModel();
+
+            // Set the trained model as the current model
+            CurrentModel = nn;
 
             // Set training as complete
             ValueGetter.IsTrainingComplete = true;

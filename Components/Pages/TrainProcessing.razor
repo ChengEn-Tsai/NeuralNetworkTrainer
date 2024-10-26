@@ -1,28 +1,42 @@
 ﻿@page "/train/Processing"
 @using MudBlazor
 @inject HttpClient Http
+@inject NavigationManager NavManager
 
-<div>
-    <MudText Typo="Typo.h4" Align="Align.Center">Training Progress</MudText>
+<MudPaper Class="p-6" Elevation="4">
+    <div>
+        <MudText Typo="Typo.h4" Align="Align.Center">Training Progress</MudText>
 
-    <MudText Typo="Typo.h5">Epoch: @metrics.Epoch</MudText>
-    <MudText>Loss: @metrics.Loss</MudText>
-    <MudText>Accuracy: @metrics.Accuracy</MudText>
-    <MudText>Validation Loss: @metrics.ValLoss</MudText>
-    <MudText>Validation Accuracy: @metrics.ValAccuracy</MudText>
-</div>
+        <MudText Typo="Typo.h5">Epoch: @metrics.Epoch</MudText>
+        <MudText>Loss: @metrics.Loss</MudText>
+        <MudText>Accuracy: @metrics.Accuracy</MudText>
+        <MudText>Validation Loss: @metrics.ValLoss</MudText>
+        <MudText>Validation Accuracy: @metrics.ValAccuracy</MudText>
+    </div>
 
-<!-- Render the combined chart -->
-<div>
-    <MudChart ChartType="ChartType.Line" ChartSeries="@Series" XAxisLabels="@epochLabels.ToArray()" Width="100%" Height="350px" />
-</div>
+    <!-- Render the combined chart -->
+    <div class="mt-4">
+        <MudChart ChartType="ChartType.Line" ChartSeries="@Series" XAxisLabels="@epochLabels.ToArray()" Width="100%" Height="350px" />
+    </div>
 
-<div>
-    <MudText Typo="Typo.h5">Standard Output (Training Details):</MudText>
-    <MudPaper Class="p-4" Elevation="1">
-        <MudText>@output</MudText>
-    </MudPaper>
-</div>
+    <div class="mt-4">
+        <MudText Typo="Typo.h5">Standard Output (Training Details):</MudText>
+        <MudPaper Class="p-4" Elevation="1">
+            <MudText>@output</MudText>
+        </MudPaper>
+    </div>
+
+    <!-- Model Playground Button -->
+    <div class="mt-6" style="text-align: center;">
+        <MudButton Color="Color.Info"
+                   Variant="Variant.Filled"
+                   Disabled="@(!metrics.IsTrainingComplete)"
+                   OnClick="NavigateToPlayground"
+                   StartIcon="@Icons.Material.Filled.PlayCircleFilled">
+            Model Playground
+        </MudButton>
+    </div>
+</MudPaper>
 
 @code {
     private TrainingMetrics metrics = new TrainingMetrics();
@@ -62,10 +76,10 @@
                         epochLabels.Add($"Epoch {metrics.Epoch}");
 
                         // Update the data for each series
-                        UpdateSeriesData(Series[0], metrics.Loss.Value);
-                        UpdateSeriesData(Series[1], metrics.Accuracy.Value);
-                        UpdateSeriesData(Series[2], metrics.ValLoss.Value);
-                        UpdateSeriesData(Series[3], metrics.ValAccuracy.Value);
+                        UpdateSeriesData(Series[0], metrics.Loss ?? 0);
+                        UpdateSeriesData(Series[1], metrics.Accuracy ?? 0);
+                        UpdateSeriesData(Series[2], metrics.ValLoss ?? 0);
+                        UpdateSeriesData(Series[3], metrics.ValAccuracy ?? 0);
 
                         // Optionally limit data points
                         const int maxDataPoints = 100;
@@ -128,6 +142,11 @@
             dataList.RemoveAt(0);
             series.Data = dataList.ToArray();
         }
+    }
+
+    private void NavigateToPlayground()
+    {
+        NavManager.NavigateTo("/model/playground");
     }
 
     public class TrainingMetrics
