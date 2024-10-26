@@ -339,8 +339,14 @@ public class CsvNeuralNetwork : BaseNeuralNetwork
 
     public override void SaveModel(string name)
     {
-        Console.WriteLine("Saving model to path: ./{name}");
-        Model.save($"./{name}");
+        string saveDirectory = Path.Combine("SavedModels", name);
+        Console.WriteLine($"Saving model to path: {saveDirectory}");
+
+        // Ensure the directory exists
+        Directory.CreateDirectory(saveDirectory);
+
+        // Save the model
+        Model.save(saveDirectory);
         Console.WriteLine("Model saved successfully");
     }
 

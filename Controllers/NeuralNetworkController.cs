@@ -5,6 +5,7 @@ using DotNetAssignment2;
 using DotNetAssignment2.Data;
 using DotNetAssignment2.Models;
 using Tensorflow.Keras;
+using System.IO.Compression;
 
 [Route("api/[controller]")]
 [ApiController]
@@ -182,6 +183,55 @@ public class NeuralNetworkController : ControllerBase
         public string ModelPath { get; set; }
     }
 
+    /// <summary>
+    /// Endpoint to download the trained model.
+    /// </summary>
+    /// <returns>ZIP file containing the saved model.</returns>
+    [HttpGet("download-model")]
+    public IActionResult DownloadModel()
+    {
+        if (CurrentModel == null)
+        {
+            return NotFound("No model is currently loaded or trained.");
+        }
+
+        try
+        {
+            // Define the model name and paths
+            string modelName = "trained_model";
+            string saveDirectory = Path.Combine("SavedModels", modelName);
+            string zipPath = Path.Combine("SavedModels", $"{modelName}.zip");
+
+            // Check if the model directory exists
+            if (!Directory.Exists(saveDirectory))
+            {
+                return NotFound("Model directory does not exist after saving.");
+            }
+
+            // Delete existing zip if it exists
+            if (System.IO.File.Exists(zipPath))
+            {
+                System.IO.File.Delete(zipPath);
+            }
+
+            // Create a ZIP archive of the saved model
+            ZipFile.CreateFromDirectory(saveDirectory, zipPath);
+
+            // Read the ZIP file into a byte array
+            var fileBytes = System.IO.File.ReadAllBytes(zipPath);
+
+            // Return the file as a downloadable response
+            return File(fileBytes, "application/zip", $"{modelName}.zip");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error downloading model: {ex.Message}");
+            return StatusCode(500, $"Error downloading model: {ex.Message}");
+        }
+    }
+
+
+
     private void Train(TrainingForm form)
     {
         try
@@ -204,6 +254,9 @@ public class NeuralNetworkController : ControllerBase
 
             // Set the trained model as the current model
             CurrentModel = nn;
+
+            // Save the model to "SavedModels/trained_model"
+            CurrentModel.SaveModel("trained_model");
 
             // Set training as complete
             ValueGetter.IsTrainingComplete = true;

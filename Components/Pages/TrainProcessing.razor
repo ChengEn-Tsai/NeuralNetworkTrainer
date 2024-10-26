@@ -2,6 +2,7 @@
 @using MudBlazor
 @inject HttpClient Http
 @inject NavigationManager NavManager
+@inject IJSRuntime JS
 
 <MudPaper Class="p-6" Elevation="4">
     <div>
@@ -26,7 +27,7 @@
         </MudPaper>
     </div>
 
-    <!-- Model Playground Button -->
+    <!-- Action Buttons -->
     <div class="mt-6" style="text-align: center;">
         <MudButton Color="Color.Info"
                    Variant="Variant.Filled"
@@ -34,6 +35,14 @@
                    OnClick="NavigateToPlayground"
                    StartIcon="@Icons.Material.Filled.PlayCircleFilled">
             Model Playground
+        </MudButton>
+
+        <MudButton Color="Color.Success"
+                   Variant="Variant.Filled"
+                   Disabled="@(!metrics.IsTrainingComplete)"
+                   OnClick="DownloadModel"
+                   StartIcon="@Icons.Material.Filled.Download">
+            Download Model
         </MudButton>
     </div>
 </MudPaper>
@@ -147,6 +156,24 @@
     private void NavigateToPlayground()
     {
         NavManager.NavigateTo("/model/playground");
+    }
+
+    /// <summary>
+    /// Handles the download of the trained model.
+    /// </summary>
+    private async Task DownloadModel()
+    {
+        try
+        {
+            // Trigger the download by navigating to the download endpoint
+            var downloadUrl = "api/NeuralNetwork/download-model";
+            await JS.InvokeVoidAsync("open", downloadUrl, "_blank");
+        }
+        catch (Exception ex)
+        {
+            output += $"Error downloading model: {ex.Message}\n";
+            StateHasChanged();
+        }
     }
 
     public class TrainingMetrics
