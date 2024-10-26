@@ -19,12 +19,20 @@
         <MudButton OnClick="Exit" Color="Color.Secondary" Variant="Variant.Outlined" Class="mt-4 ml-2">Exit</MudButton>
     </MudForm>
 
-    @if (PredictionResult != null)
+    @if (!string.IsNullOrEmpty(PredictionResult))
     {
-        <MudPaper Class="p-4 mt-4" Elevation="1">
-            <MudText Typo="Typo.h6">Prediction Result:</MudText>
-            <MudText Typo="Typo.body1">@PredictionResult</MudText>
-        </MudPaper>
+        <MudCard Class="mt-6" Style="background-color: #f5f5f5;">
+            <MudCardContent>
+                <MudText Typo="Typo.h5">Prediction Result</MudText>
+                <MudDivider Class="my-2" />
+                <MudText Typo="Typo.subtitle1">Predicted Class:</MudText>
+
+                <MudChip T="string" Color="@GetChipColor(PredictionResult)" Class="mt-2" >
+                    @PredictionResult
+                </MudChip>
+
+            </MudCardContent>
+        </MudCard>
     }
 </MudPaper>
 
@@ -102,9 +110,9 @@
 
             // Create the prediction request
             var predictionRequest = new PredictionRequest
-                {
-                    Features = inputValues.ToArray()
-                };
+            {
+                Features = inputValues.ToArray()
+            };
 
             // Send the prediction request to the backend
             var response = await Http.PostAsJsonAsync("api/NeuralNetwork/predict", predictionRequest);
@@ -135,6 +143,18 @@
     private void Exit()
     {
         NavManager.NavigateTo("/");
+    }
+
+    // Method to get color based on prediction result
+    private Color GetChipColor(string prediction)
+    {
+        return prediction switch
+        {
+            "Class A" => Color.Primary,
+            "Class B" => Color.Secondary,
+            "Class C" => Color.Tertiary,
+            _ => Color.Info
+        };
     }
 
     // Models for prediction request and response
