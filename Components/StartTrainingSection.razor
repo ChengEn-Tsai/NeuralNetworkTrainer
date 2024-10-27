@@ -33,7 +33,7 @@
             return;
         }
 
-        // Prepare the training form
+        // preparing the training form
         trainingForm.FilePath = FilePath;
         trainingForm.Label = Label;
         trainingForm.FeatureSelector = FeaturesSelector;
@@ -47,10 +47,10 @@
             trainingForm.Layers.Add(layer.name + "," + layer.P1 + "," + layer.P2);
         }
 
-        // Navigate immediately to the processing page
+        
         NavManager.NavigateTo("/train/Processing");
 
-        // Call API asynchronously after navigating
+        // calls API asynchronously
         try
         {
             var response = await Http.PostAsJsonAsync("api/NeuralNetwork/start", trainingForm);

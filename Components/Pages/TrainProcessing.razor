@@ -15,7 +15,6 @@
         <MudText>Validation Accuracy: @metrics.ValAccuracy</MudText>
     </div>
 
-    <!-- Render the combined chart -->
     <div class="mt-4">
         <MudChart ChartType="ChartType.Line" ChartSeries="@Series" XAxisLabels="@epochLabels.ToArray()" Width="100%" Height="350px" />
     </div>
@@ -27,7 +26,6 @@
         </MudPaper>
     </div>
 
-    <!-- Action Buttons -->
     <div class="mt-6" style="text-align: center;">
         <MudButton Color="Color.Info"
                    Variant="Variant.Filled"
@@ -55,13 +53,12 @@
 
     protected override void OnInitialized()
     {
-        // Initialize the chart series with empty data arrays
         Series.Add(new ChartSeries { Name = "Loss", Data = Array.Empty<double>() });
         Series.Add(new ChartSeries { Name = "Accuracy", Data = Array.Empty<double>() });
         Series.Add(new ChartSeries { Name = "Validation Loss", Data = Array.Empty<double>() });
         Series.Add(new ChartSeries { Name = "Validation Accuracy", Data = Array.Empty<double>() });
 
-        // Start polling for metrics
+        // starts polling for metrics
         _ = PollTrainingStatus();
     }
 
@@ -81,16 +78,14 @@
                     {
                         metrics = latestMetrics;
 
-                        // Update the epoch labels
                         epochLabels.Add($"Epoch {metrics.Epoch}");
 
-                        // Update the data for each series
+                        // updating the data for each series
                         UpdateSeriesData(Series[0], metrics.Loss ?? 0);
                         UpdateSeriesData(Series[1], metrics.Accuracy ?? 0);
                         UpdateSeriesData(Series[2], metrics.ValLoss ?? 0);
                         UpdateSeriesData(Series[3], metrics.ValAccuracy ?? 0);
 
-                        // Optionally limit data points
                         const int maxDataPoints = 100;
                         if (epochLabels.Count > maxDataPoints)
                         {
@@ -101,14 +96,13 @@
                             TrimSeriesData(Series[3]);
                         }
 
-                        // Append to the standard output
+                        // appending to the standard output
                         output += $"Epoch {metrics.Epoch}: Loss = {metrics.Loss:F4}, Accuracy = {metrics.Accuracy:P2}, " +
                                   $"Val Loss = {metrics.ValLoss:F4}, Val Accuracy = {metrics.ValAccuracy:P2}\n";
 
                         StateHasChanged();
                     });
 
-                    // Check if training is complete
                     if (latestMetrics.IsTrainingComplete)
                     {
                         isTrainingComplete = true;
@@ -124,11 +118,10 @@
                 });
             }
 
-            // Wait before polling again
+            // wait before polling 
             await Task.Delay(2000);
         }
 
-        // Optionally, you can display a message indicating that training is complete
         await InvokeAsync(() =>
         {
             output += "\nTraining has completed.";
@@ -158,14 +151,12 @@
         NavManager.NavigateTo("/model/playground");
     }
 
-    /// <summary>
-    /// Handles the download of the trained model.
-    /// </summary>
+    // download of the trained model
     private async Task DownloadModel()
     {
         try
         {
-            // Trigger the download by navigating to the download endpoint
+            // trigger the download
             var downloadUrl = "api/NeuralNetwork/download-model";
             await JS.InvokeVoidAsync("open", downloadUrl, "_blank");
         }
@@ -183,6 +174,6 @@
         public double? Accuracy { get; set; }
         public double? ValLoss { get; set; }
         public double? ValAccuracy { get; set; }
-        public bool IsTrainingComplete { get; set; } // New property
+        public bool IsTrainingComplete { get; set; } 
     }
 }

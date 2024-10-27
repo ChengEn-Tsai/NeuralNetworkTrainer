@@ -51,7 +51,6 @@
     {
         try
         {
-            // Fetch features from the backend's 'features' endpoint (current model)
             var features = await Http.GetFromJsonAsync<List<string>>("api/NeuralNetwork/features");
             if (features != null && features.Any())
             {
@@ -76,7 +75,7 @@
 
     private async Task HandlePrediction()
     {
-        // Validate the form
+        // validate form
         await form.Validate();
 
         if (form.IsValid)
@@ -93,7 +92,6 @@
     {
         try
         {
-            // Convert input strings to floats
             var inputValues = new List<float>();
             foreach (var feature in Features)
             {
@@ -108,13 +106,12 @@
                 }
             }
 
-            // Create the prediction request
             var predictionRequest = new PredictionRequest
             {
                 Features = inputValues.ToArray()
             };
 
-            // Send the prediction request to the backend
+            // send the prediction request to the backend
             var response = await Http.PostAsJsonAsync("api/NeuralNetwork/predict", predictionRequest);
             if (response.IsSuccessStatusCode)
             {
@@ -145,7 +142,6 @@
         NavManager.NavigateTo("/");
     }
 
-    // Method to get color based on prediction result
     private Color GetChipColor(string prediction)
     {
         return prediction switch
@@ -157,7 +153,6 @@
         };
     }
 
-    // Models for prediction request and response
     public class PredictionRequest
     {
         public float[] Features { get; set; }

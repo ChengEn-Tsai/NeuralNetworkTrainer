@@ -12,7 +12,7 @@ using System.IO.Compression;
 public class NeuralNetworkController : ControllerBase
 {
     private readonly AppDbContext _dbContext;
-    private static INeuralNetwork? CurrentModel; // Static variable to hold the current model
+    private static INeuralNetwork? CurrentModel; // variable to hold the current model
 
     public NeuralNetworkController(AppDbContext dbContext)
     {
@@ -31,13 +31,12 @@ public class NeuralNetworkController : ControllerBase
                 return BadRequest("Invalid form data.");
             }
 
-            // Reset training state
             ValueGetter.Reset();
 
-            // Start training asynchronously
+            // start training asynchronously
             _ = Task.Run(() => Train(form));
 
-            // Save the form in the database
+            // save the form in the database
             _dbContext.TrainingForms.Add(form);
             await _dbContext.SaveChangesAsync();
 
@@ -50,7 +49,7 @@ public class NeuralNetworkController : ControllerBase
         }
     }
 
-    // GET: Get real-time training metrics
+    // GET: gets real-time training metrics
     [HttpGet]
     [Route("status")]
     public IActionResult GetTrainingMetrics()
@@ -61,14 +60,14 @@ public class NeuralNetworkController : ControllerBase
             Accuracy = ValueGetter.Accuracy.LastOrDefault(),
             ValLoss = ValueGetter.ValLoss.LastOrDefault(),
             ValAccuracy = ValueGetter.ValAccuracy.LastOrDefault(),
-            Epoch = ValueGetter.Loss.Count, // Assuming Loss count is equivalent to epochs processed
+            Epoch = ValueGetter.Loss.Count, 
             IsTrainingComplete = ValueGetter.IsTrainingComplete
         };
 
         return Ok(metrics);
     }
 
-    // GET: Retrieve features from the current model
+    // GET: retrieve features from the current model
     [HttpGet]
     [Route("features")]
     public IActionResult GetFeatures()
@@ -96,7 +95,7 @@ public class NeuralNetworkController : ControllerBase
         }
     }
 
-    // POST: Handle prediction requests
+    // POST: handle prediction requests
     [HttpPost]
     [Route("predict")]
     public IActionResult Predict([FromBody] PredictionRequest request)
@@ -110,16 +109,15 @@ public class NeuralNetworkController : ControllerBase
 
             var featureList = CurrentModel.GetFeatures();
 
-            // Correct usage of Count as a property, not a method
             if (request.Features == null || request.Features.Length != featureList.Count)
             {
                 return BadRequest($"Expected {featureList.Count} features, but received {request.Features?.Length ?? 0}.");
             }
 
-            // Perform prediction
+            // perform prediction
             CurrentModel.TestModel(request.Features);
 
-            // Retrieve the prediction result
+            // get the prediction result
             string predictionResult = CurrentModel.GetLastPrediction();
 
             return Ok(new PredictionResponse { Prediction = predictionResult });
@@ -130,7 +128,7 @@ public class NeuralNetworkController : ControllerBase
         }
     }
 
-    // POST: Load a pretrained model
+    // POST: load a pretrained model
     [HttpPost]
     [Route("load-model")]
     public IActionResult LoadModel([FromBody] LoadModelRequest request)
@@ -142,20 +140,20 @@ public class NeuralNetworkController : ControllerBase
                 return BadRequest("Model path is required.");
             }
 
-            // Load the model
+            // load model
             var nn = new CsvNeuralNetwork(
-                layers: new List<ILayer>(), // Initialize with appropriate layers if necessary
+                layers: new List<ILayer>(),
                 epochs: 0,
                 batchSize: 0,
-                isClassification: false, // Set appropriately based on your model
-                targetClass: "", // Set appropriately
-                pathToDataset: "", // Not needed for loading
-                featuresToKeep: "" // Not needed if already loaded
+                isClassification: false, 
+                targetClass: "", 
+                pathToDataset: "",
+                featuresToKeep: ""
             );
 
             nn.LoadModel(request.ModelPath);
 
-            // Set the loaded model as the current model
+            // set loaded model as current model
             CurrentModel = nn;
 
             return Ok(new { Message = "Model loaded successfully." });
@@ -166,7 +164,6 @@ public class NeuralNetworkController : ControllerBase
         }
     }
 
-    // Models for prediction request and response
     public class PredictionRequest
     {
         public float[] Features { get; set; }
@@ -177,16 +174,12 @@ public class NeuralNetworkController : ControllerBase
         public string Prediction { get; set; }
     }
 
-    // Model for load model request
     public class LoadModelRequest
     {
         public string ModelPath { get; set; }
     }
 
-    /// <summary>
-    /// Endpoint to download the trained model.
-    /// </summary>
-    /// <returns>ZIP file containing the saved model.</returns>
+
     [HttpGet("download-model")]
     public IActionResult DownloadModel()
     {
@@ -197,30 +190,26 @@ public class NeuralNetworkController : ControllerBase
 
         try
         {
-            // Define the model name and paths
             string modelName = "trained_model";
             string saveDirectory = Path.Combine("SavedModels", modelName);
             string zipPath = Path.Combine("SavedModels", $"{modelName}.zip");
 
-            // Check if the model directory exists
+            // check if model directory exists
             if (!Directory.Exists(saveDirectory))
             {
                 return NotFound("Model directory does not exist after saving.");
             }
 
-            // Delete existing zip if it exists
             if (System.IO.File.Exists(zipPath))
             {
                 System.IO.File.Delete(zipPath);
             }
 
-            // Create a ZIP archive of the saved model
             ZipFile.CreateFromDirectory(saveDirectory, zipPath);
 
-            // Read the ZIP file into a byte array
             var fileBytes = System.IO.File.ReadAllBytes(zipPath);
 
-            // Return the file as a downloadable response
+            // returns the file as a downloadable response
             return File(fileBytes, "application/zip", $"{modelName}.zip");
         }
         catch (Exception ex)
@@ -252,19 +241,15 @@ public class NeuralNetworkController : ControllerBase
             nn.BuildModel();
             nn.TrainModel();
 
-            // Set the trained model as the current model
             CurrentModel = nn;
 
-            // Save the model to "SavedModels/trained_model"
             CurrentModel.SaveModel("trained_model");
 
-            // Set training as complete
             ValueGetter.IsTrainingComplete = true;
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Training failed: {ex.Message}");
-            // Mark training as complete even if it failed
             ValueGetter.IsTrainingComplete = true;
         }
     }
