@@ -1,7 +1,179 @@
 ﻿@page "/train/Processing"
+@using MudBlazor
+@inject HttpClient Http
+@inject NavigationManager NavManager
+@inject IJSRuntime JS
 
-<h3>TrainProcessing</h3>
+<MudPaper Class="p-6" Elevation="4">
+    <div>
+        <MudText Typo="Typo.h4" Align="Align.Center">Training Progress</MudText>
+
+        <MudText Typo="Typo.h5">Epoch: @metrics.Epoch</MudText>
+        <MudText>Loss: @metrics.Loss</MudText>
+        <MudText>Accuracy: @metrics.Accuracy</MudText>
+        <MudText>Validation Loss: @metrics.ValLoss</MudText>
+        <MudText>Validation Accuracy: @metrics.ValAccuracy</MudText>
+    </div>
+
+    <div class="mt-4">
+        <MudChart ChartType="ChartType.Line" ChartSeries="@Series" XAxisLabels="@epochLabels.ToArray()" Width="100%" Height="350px" />
+    </div>
+
+    <div class="mt-4">
+        <MudText Typo="Typo.h5">Standard Output (Training Details):</MudText>
+        <MudPaper Class="p-4" Elevation="1">
+            <MudText>@output</MudText>
+        </MudPaper>
+    </div>
+
+    <div class="mt-6" style="text-align: center;">
+        <MudButton Color="Color.Info"
+                   Variant="Variant.Filled"
+                   Disabled="@(!metrics.IsTrainingComplete)"
+                   OnClick="NavigateToPlayground"
+                   StartIcon="@Icons.Material.Filled.PlayCircleFilled">
+            Model Playground
+        </MudButton>
+
+        <MudButton Color="Color.Success"
+                   Variant="Variant.Filled"
+                   Disabled="@(!metrics.IsTrainingComplete)"
+                   OnClick="DownloadModel"
+                   StartIcon="@Icons.Material.Filled.Download">
+            Download Model
+        </MudButton>
+    </div>
+</MudPaper>
 
 @code {
+    private TrainingMetrics metrics = new TrainingMetrics();
+    private List<ChartSeries> Series = new List<ChartSeries>();
+    private List<string> epochLabels = new List<string>();
+    private string output = "";
 
+    protected override void OnInitialized()
+    {
+        Series.Add(new ChartSeries { Name = "Loss", Data = Array.Empty<double>() });
+        Series.Add(new ChartSeries { Name = "Accuracy", Data = Array.Empty<double>() });
+        Series.Add(new ChartSeries { Name = "Validation Loss", Data = Array.Empty<double>() });
+        Series.Add(new ChartSeries { Name = "Validation Accuracy", Data = Array.Empty<double>() });
+
+        // starts polling for metrics
+        _ = PollTrainingStatus();
+    }
+
+    private async Task PollTrainingStatus()
+    {
+        bool isTrainingComplete = false;
+
+        while (!isTrainingComplete)
+        {
+            try
+            {
+                var latestMetrics = await Http.GetFromJsonAsync<TrainingMetrics>("api/NeuralNetwork/status");
+
+                if (latestMetrics != null)
+                {
+                    await InvokeAsync(() =>
+                    {
+                        metrics = latestMetrics;
+
+                        epochLabels.Add($"Epoch {metrics.Epoch}");
+
+                        // updating the data for each series
+                        UpdateSeriesData(Series[0], metrics.Loss ?? 0);
+                        UpdateSeriesData(Series[1], metrics.Accuracy ?? 0);
+                        UpdateSeriesData(Series[2], metrics.ValLoss ?? 0);
+                        UpdateSeriesData(Series[3], metrics.ValAccuracy ?? 0);
+
+                        const int maxDataPoints = 100;
+                        if (epochLabels.Count > maxDataPoints)
+                        {
+                            epochLabels.RemoveAt(0);
+                            TrimSeriesData(Series[0]);
+                            TrimSeriesData(Series[1]);
+                            TrimSeriesData(Series[2]);
+                            TrimSeriesData(Series[3]);
+                        }
+
+                        // appending to the standard output
+                        output += $"Epoch {metrics.Epoch}: Loss = {metrics.Loss:F4}, Accuracy = {metrics.Accuracy:P2}, " +
+                                  $"Val Loss = {metrics.ValLoss:F4}, Val Accuracy = {metrics.ValAccuracy:P2}\n";
+
+                        StateHasChanged();
+                    });
+
+                    if (latestMetrics.IsTrainingComplete)
+                    {
+                        isTrainingComplete = true;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                await InvokeAsync(() =>
+                {
+                    output += $"Error fetching metrics: {ex.Message}\n";
+                    StateHasChanged();
+                });
+            }
+
+            // wait before polling 
+            await Task.Delay(2000);
+        }
+
+        await InvokeAsync(() =>
+        {
+            output += "\nTraining has completed.";
+            StateHasChanged();
+        });
+    }
+
+    private void UpdateSeriesData(ChartSeries series, double newValue)
+    {
+        var dataList = series.Data.ToList();
+        dataList.Add(newValue);
+        series.Data = dataList.ToArray();
+    }
+
+    private void TrimSeriesData(ChartSeries series)
+    {
+        var dataList = series.Data.ToList();
+        if (dataList.Count > 0)
+        {
+            dataList.RemoveAt(0);
+            series.Data = dataList.ToArray();
+        }
+    }
+
+    private void NavigateToPlayground()
+    {
+        NavManager.NavigateTo("/model/playground");
+    }
+
+    // download of the trained model
+    private async Task DownloadModel()
+    {
+        try
+        {
+            // trigger the download
+            var downloadUrl = "api/NeuralNetwork/download-model";
+            await JS.InvokeVoidAsync("open", downloadUrl, "_blank");
+        }
+        catch (Exception ex)
+        {
+            output += $"Error downloading model: {ex.Message}\n";
+            StateHasChanged();
+        }
+    }
+
+    public class TrainingMetrics
+    {
+        public int Epoch { get; set; }
+        public double? Loss { get; set; }
+        public double? Accuracy { get; set; }
+        public double? ValLoss { get; set; }
+        public double? ValAccuracy { get; set; }
+        public bool IsTrainingComplete { get; set; } 
+    }
 }

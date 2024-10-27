@@ -19,6 +19,9 @@ public interface INeuralNetwork
     void TestModel(float[] args);
     void SaveModel(string name);
     void LoadModel(string path);
+
+    List<string> GetFeatures();
+    string GetLastPrediction();
 }
 
 public abstract class BaseNeuralNetwork : INeuralNetwork
@@ -69,6 +72,8 @@ public abstract class BaseNeuralNetwork : INeuralNetwork
     public abstract void TestModel(float[] args);
     public abstract void SaveModel(string name);
     public abstract void LoadModel(string path);
+    public abstract List<string> GetFeatures();
+    public abstract string GetLastPrediction();
 
     protected void ApplyLayers(Func<ILayer, Tensors, Tensors> applyFunction)
     {
@@ -181,6 +186,7 @@ public abstract class BaseNeuralNetwork : INeuralNetwork
 public class CsvNeuralNetwork : BaseNeuralNetwork
 {
     public Dictionary<string, int> LabelEncoding;
+    private string? _lastPrediction; // Store the last prediction
 
     public CsvNeuralNetwork(string[] layers, int epochs, int batchSize, bool isClassification, string targetClass,
         string pathToDataset = "", string featuresToKeep = null, string optimizer = "adam")
@@ -306,15 +312,41 @@ public class CsvNeuralNetwork : BaseNeuralNetwork
                 var probability = prediction[0, classIndex];
                 results.Add($"{className}: {probability}");
             }
+            _lastPrediction = string.Join(", ", results);
             Console.WriteLine("Prediction : " + string.Join(", ", results));
         }
-        else Console.WriteLine("Prediction: " + prediction.ToString());
+        else
+        {
+            _lastPrediction = prediction.ToString();
+            Console.WriteLine("Prediction: " + prediction.ToString());
+        }
+    }
+
+    public override string GetLastPrediction()
+    {
+        return _lastPrediction ?? "No prediction made.";
+    }
+
+    // New method to expose selected features
+    public override List<string> GetFeatures()
+    {
+        if (!string.IsNullOrEmpty(FeaturesToKeep))
+        {
+            return FeaturesToKeep.Split(',').Select(f => f.Trim()).ToList();
+        }
+        return new List<string>();
     }
 
     public override void SaveModel(string name)
     {
-        Console.WriteLine("Saving model to path: ./{name}");
-        Model.save($"./{name}");
+        string saveDirectory = Path.Combine("SavedModels", name);
+        Console.WriteLine($"Saving model to path: {saveDirectory}");
+
+        // Ensure the directory exists
+        Directory.CreateDirectory(saveDirectory);
+
+        // Save the model
+        Model.save(saveDirectory);
         Console.WriteLine("Model saved successfully");
     }
 
@@ -549,5 +581,16 @@ public static class ValueGetter
     public static List<float> ValLoss = new List<float>();
     public static List<float> ValAccuracy = new List<float>();
 
-    
+    // New property to track training completion
+    public static bool IsTrainingComplete { get; set; } = false;
+
+    // Method to reset the training state
+    public static void Reset()
+    {
+        Loss = new List<float>();
+        Accuracy = new List<float>();
+        ValLoss = new List<float>();
+        ValAccuracy = new List<float>();
+        IsTrainingComplete = false;
+    }
 }
