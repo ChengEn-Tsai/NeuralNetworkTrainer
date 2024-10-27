@@ -26,7 +26,7 @@ else
             <MudTd DataLabel="FileName">@context.FileName</MudTd>
             <MudTd DataLabel="Check">
                 <MudButton @onclick="() => OpenDialogAsync(context.Id, context.FileName)" Variant="Variant.Filled" Color="Color.Primary">
-                    Open Simple Dialog
+                    Check the file content
                 </MudButton>
             </MudTd>
             <MudTd DataLabel="TrainAgain">
@@ -52,7 +52,7 @@ else
 
     private Task OpenDialogAsync(int id, string filename)
     {
-        var options = new DialogOptions { BackgroundClass = "my-custom-class" };
+        var options = new DialogOptions { BackgroundClass = "my-custom-class", FullScreen = true };
         var parameters = new DialogParameters
         {
             { "id", id }
