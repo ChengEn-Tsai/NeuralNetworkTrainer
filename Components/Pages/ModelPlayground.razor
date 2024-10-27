@@ -1,0 +1,165 @@
+﻿@page "/model/playground"
+@using MudBlazor
+@inject HttpClient Http
+@inject ISnackbar Snackbar
+@inject NavigationManager NavManager
+
+<MudPaper Class="p-6" Elevation="4">
+    <MudText Typo="Typo.h4" Align="Align.Center">Model Playground</MudText>
+    <MudForm @ref="form">
+        <MudGrid>
+            @foreach (var feature in Features)
+            {
+                <MudItem xs="12" sm="6" md="4">
+                    <MudTextField @bind-Value="FeatureInputs[feature]" Label="@feature" Required="true" />
+                </MudItem>
+            }
+        </MudGrid>
+        <MudButton OnClick="HandlePrediction" Color="Color.Primary" Variant="Variant.Filled" Class="mt-4">Test</MudButton>
+        <MudButton OnClick="Exit" Color="Color.Secondary" Variant="Variant.Outlined" Class="mt-4 ml-2">Exit</MudButton>
+    </MudForm>
+
+    @if (!string.IsNullOrEmpty(PredictionResult))
+    {
+        <MudCard Class="mt-6" Style="background-color: #f5f5f5;">
+            <MudCardContent>
+                <MudText Typo="Typo.h5">Prediction Result</MudText>
+                <MudDivider Class="my-2" />
+                <MudText Typo="Typo.subtitle1">Predicted Class:</MudText>
+
+                <MudChip T="string" Color="@GetChipColor(PredictionResult)" Class="mt-2" >
+                    @PredictionResult
+                </MudChip>
+
+            </MudCardContent>
+        </MudCard>
+    }
+</MudPaper>
+
+@code {
+    private MudForm form;
+    private List<string> Features = new List<string>();
+    private Dictionary<string, string> FeatureInputs = new Dictionary<string, string>();
+    private string? PredictionResult;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadSelectedFeatures();
+    }
+
+    private async Task LoadSelectedFeatures()
+    {
+        try
+        {
+            var features = await Http.GetFromJsonAsync<List<string>>("api/NeuralNetwork/features");
+            if (features != null && features.Any())
+            {
+                Features = features;
+                foreach (var feature in Features)
+                {
+                    FeatureInputs[feature] = string.Empty;
+                }
+            }
+            else
+            {
+                Snackbar.Add("No features found. Please train or load a model first.", Severity.Error);
+                NavManager.NavigateTo("/");
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading features: {ex.Message}", Severity.Error);
+            NavManager.NavigateTo("/");
+        }
+    }
+
+    private async Task HandlePrediction()
+    {
+        // validate form
+        await form.Validate();
+
+        if (form.IsValid)
+        {
+            await SendPredictionRequest();
+        }
+        else
+        {
+            Snackbar.Add("Please correct the errors and try again.", Severity.Error);
+        }
+    }
+
+    private async Task SendPredictionRequest()
+    {
+        try
+        {
+            var inputValues = new List<float>();
+            foreach (var feature in Features)
+            {
+                if (float.TryParse(FeatureInputs[feature], out float value))
+                {
+                    inputValues.Add(value);
+                }
+                else
+                {
+                    Snackbar.Add($"Invalid input for {feature}. Please enter a valid number.", Severity.Error);
+                    return;
+                }
+            }
+
+            var predictionRequest = new PredictionRequest
+            {
+                Features = inputValues.ToArray()
+            };
+
+            // send the prediction request to the backend
+            var response = await Http.PostAsJsonAsync("api/NeuralNetwork/predict", predictionRequest);
+            if (response.IsSuccessStatusCode)
+            {
+                var predictionResponse = await response.Content.ReadFromJsonAsync<PredictionResponse>();
+                if (predictionResponse != null)
+                {
+                    PredictionResult = predictionResponse.Prediction;
+                }
+                else
+                {
+                    Snackbar.Add("Invalid response from the server.", Severity.Error);
+                }
+            }
+            else
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                Snackbar.Add($"Prediction failed: {error}", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error during prediction: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private void Exit()
+    {
+        NavManager.NavigateTo("/");
+    }
+
+    private Color GetChipColor(string prediction)
+    {
+        return prediction switch
+        {
+            "Class A" => Color.Primary,
+            "Class B" => Color.Secondary,
+            "Class C" => Color.Tertiary,
+            _ => Color.Info
+        };
+    }
+
+    public class PredictionRequest
+    {
+        public float[] Features { get; set; }
+    }
+
+    public class PredictionResponse
+    {
+        public string Prediction { get; set; }
+    }
+}
