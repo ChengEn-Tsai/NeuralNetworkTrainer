@@ -34,9 +34,10 @@ public abstract class BaseNeuralNetwork : INeuralNetwork
     protected Tensors Input;
     protected Tensors Output;
     protected IModel Model;
+    protected string optimizer;
 
     public BaseNeuralNetwork(List<ILayer> layers, int epochs, int batchSize, bool isClassification, string targetClass,
-        string pathToDataset = "", string featuresToKeep = null)
+        string pathToDataset = "", string featuresToKeep = null, string optimizer = "adam")
     {
         Console.WriteLine("Initializing BaseNeuralNetwork");
         Layers = layers;
@@ -46,9 +47,10 @@ public abstract class BaseNeuralNetwork : INeuralNetwork
         TargetClass = targetClass;
         PathToDataset = pathToDataset;
         FeaturesToKeep = featuresToKeep;
+        this.optimizer = optimizer.ToLower();
     }
     public BaseNeuralNetwork(string[] layers, int epochs, int batchSize, bool isClassification, string targetClass,
-        string pathToDataset = "", string featuresToKeep = null)
+        string pathToDataset = "", string featuresToKeep = null, string optimizer = "adam")
     {
         Console.WriteLine("Initializing BaseNeuralNetwork");
         Layers = string2Layers(layers);
@@ -58,6 +60,7 @@ public abstract class BaseNeuralNetwork : INeuralNetwork
         TargetClass = targetClass;
         PathToDataset = pathToDataset;
         FeaturesToKeep = featuresToKeep;
+        this.optimizer = optimizer.ToLower();
     }
 
     public abstract void LoadDataset();
@@ -177,15 +180,17 @@ public abstract class BaseNeuralNetwork : INeuralNetwork
 
 public class CsvNeuralNetwork : BaseNeuralNetwork
 {
+    public Dictionary<string, int> LabelEncoding;
+
     public CsvNeuralNetwork(string[] layers, int epochs, int batchSize, bool isClassification, string targetClass,
-        string pathToDataset = "", string featuresToKeep = null)
-        : base(layers, epochs, batchSize, isClassification, targetClass, pathToDataset, featuresToKeep)
+        string pathToDataset = "", string featuresToKeep = null, string optimizer = "adam")
+        : base(layers, epochs, batchSize, isClassification, targetClass, pathToDataset, featuresToKeep, optimizer)
     {
         Console.WriteLine("Initializing CsvNeuralNetwork");
     }
     public CsvNeuralNetwork(List<ILayer> layers, int epochs, int batchSize, bool isClassification, string targetClass,
-        string pathToDataset = "", string featuresToKeep = null)
-        : base(layers, epochs, batchSize, isClassification, targetClass, pathToDataset, featuresToKeep)
+        string pathToDataset = "", string featuresToKeep = null, string optimizer = "adam")
+        : base(layers, epochs, batchSize, isClassification, targetClass, pathToDataset, featuresToKeep, optimizer)
     {
         Console.WriteLine("Initializing CsvNeuralNetwork");
     }
@@ -222,7 +227,6 @@ public class CsvNeuralNetwork : BaseNeuralNetwork
 
         Input = keras.Input(features.Columns.Count, BatchSize);
         Console.WriteLine("Input layer created");
-
         ApplyLayers((layer, input) => layer.Apply(input));
 
 
@@ -237,9 +241,30 @@ public class CsvNeuralNetwork : BaseNeuralNetwork
         Console.WriteLine("Model layout : ");
         Model.summary();
 
+        IOptimizer opti = keras.optimizers.Adam(); // by default, the optimizer is Adam
+        switch (optimizer)
+        {
+            case "adam":
+                {
+                    opti = keras.optimizers.Adam();
+                    break;
+                }
+            case "adagrad":
+                {
+                    opti = keras.optimizers.RMSprop(); // no adagrad in this implementation
+                    break;
+                }
+            case "sgd":
+                {
+                    opti = keras.optimizers.SGD();
+                    break;
+                }
+
+        }
+
         var loss = Classification ? keras.losses.CategoricalCrossentropy() : keras.losses.MeanSquaredError();
         var metrics = Classification ? new[] { "acc" } : new[] { "mae" };
-        Model.compile(keras.optimizers.Adam(), loss, metrics);
+        Model.compile(opti, loss, metrics);
         Console.WriteLine("Model compiled with loss function and metrics");
     }
 
@@ -260,7 +285,7 @@ public class CsvNeuralNetwork : BaseNeuralNetwork
         };
         bool useMultiprocessing = Environment.GetEnvironmentVariable("USE_MULTIPROCESSING") == "true";
         Console.WriteLine($"Using multiprocessing: {useMultiprocessing}");
-        Model.fit(featuresNp, labelNp, BatchSize, Epochs, validation_split: 0.4f, callbacks: callbacks, use_multiprocessing: useMultiprocessing);
+        Model.fit(featuresNp, labelNp, BatchSize, Epochs, validation_split: 0.2f, callbacks: callbacks, use_multiprocessing: useMultiprocessing);
         Console.WriteLine("Model training completed");
 
     }
@@ -270,8 +295,20 @@ public class CsvNeuralNetwork : BaseNeuralNetwork
         Console.WriteLine("Testing model with input arguments");
         var array = np.array(new float[1, args.Length]);
         for (var i = 0; i < args.Length; i++) array[0, i] = args[i];
-        var prediction = Model.predict(array);
-        Console.WriteLine("Prediction: " + prediction.ToString());
+        var prediction = Model.predict(array).numpy();
+        if (LabelEncoding != null)
+        {
+            var results = new List<string>();
+            foreach (var kvp in LabelEncoding)
+            {
+                var className = kvp.Key;
+                var classIndex = kvp.Value;
+                var probability = prediction[0, classIndex];
+                results.Add($"{className}: {probability}");
+            }
+            Console.WriteLine("Prediction : " + string.Join(", ", results));
+        }
+        else Console.WriteLine("Prediction: " + prediction.ToString());
     }
 
     public override void SaveModel(string name)
@@ -301,7 +338,7 @@ public class CsvNeuralNetwork : BaseNeuralNetwork
         var featuresNp = NDArrayBuilder(features);
         var labelNp = NDArrayBuilder(label);
         Console.WriteLine("Dataset division completed");
-
+        
         return (featuresNp, labelNp);
     }
 
@@ -367,6 +404,11 @@ public class CsvNeuralNetwork : BaseNeuralNetwork
 
         encodedDf.Columns.Remove(columnName);
         Console.WriteLine("One-hot encoding completed for column: " + columnName);
+
+        if (columnName == TargetClass)
+        {
+            LabelEncoding = uniqueValues;
+        }
 
         return encodedDf;
     }
