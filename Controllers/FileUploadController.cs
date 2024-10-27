@@ -124,6 +124,7 @@ public class FileUploadController : ControllerBase
     {
         try
         {
+            // 從資料庫中查詢檔案
             var uploadedFile = _dbContext.UploadedFiles.FirstOrDefault(f => f.Id == id);
 
             if (uploadedFile == null)
@@ -131,11 +132,13 @@ public class FileUploadController : ControllerBase
                 return NotFound($"File with Id '{id}' not found.");
             }
 
+            // 確保檔案存在於磁碟上
             if (!System.IO.File.Exists(uploadedFile.FilePath))
             {
                 return NotFound($"File '{uploadedFile.FilePath}' not found on disk.");
             }
 
+            // 返回檔案路徑
             return Ok(new { FilePath = uploadedFile.FilePath, FileName = uploadedFile.FileName });
         }
         catch (Exception ex)

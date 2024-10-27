@@ -37,13 +37,6 @@ builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(backendU
 
 var app = builder.Build();
 
-// Ensure the SavedModels directory exists
-var savedModelsPath = Path.Combine(app.Environment.ContentRootPath, "SavedModels");
-if (!Directory.Exists(savedModelsPath))
-{
-    Directory.CreateDirectory(savedModelsPath);
-}
-
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {

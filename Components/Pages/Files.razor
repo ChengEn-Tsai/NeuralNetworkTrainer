@@ -69,6 +69,7 @@ else
     {
         try
         {
+            // 直接接收 UploadedFile 的 List
             files = await Http.GetFromJsonAsync<List<UploadedFile>>("api/FileUpload/files");
 
             if (files != null && files.Count > 0)
