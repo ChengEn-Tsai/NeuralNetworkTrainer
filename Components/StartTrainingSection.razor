@@ -4,11 +4,17 @@
 @inject ISnackbar Snackbar
 @inject NavigationManager NavManager
 
+
 <div style="display: flex; justify-content: center; align-items: center; height: 100%;">
     <MudButton Class="mx-5" Color="Color.Success" @onclick="startTraining" Variant="Variant.Filled">Train!</MudButton>
 </div>
 
 @code {
+    // FilePath="@FilePath"
+    //     Label="@selectedLabel"
+    //     FeaturesSelector="@string.Join(",", selectedFeaturesSelector)"
+    //     NNTParameters="@nNTParameters"
+
     [Parameter]
     public string? FilePath { get; set; }
 
@@ -27,46 +33,37 @@
     {
         Console.WriteLine("======FilePath");
         Console.WriteLine(FilePath);
-        if (string.IsNullOrEmpty(FilePath))
+        if (FilePath == "")
         {
             Snackbar.Add("Please upload a CSV file.", Severity.Error);
-            return;
-        }
-
-        // preparing the training form
-        trainingForm.FilePath = FilePath;
-        trainingForm.Label = Label;
-        trainingForm.FeatureSelector = FeaturesSelector;
-        trainingForm.Epoch = NNTParameters.Epoch;
-        trainingForm.BatchSize = NNTParameters.BatchSize;
-        trainingForm.Optimizer = NNTParameters.Optimizer;
-        trainingForm.TypeOfTraining = NNTParameters.TypeOfTraining;
-
-        foreach (var layer in NNTParameters.Layers)
+        } else
         {
-            trainingForm.Layers.Add(layer.name + "," + layer.P1 + "," + layer.P2);
-        }
+            trainingForm.FilePath = FilePath;
+            trainingForm.Label = Label;
+            trainingForm.FeatureSelector = FeaturesSelector;
+            trainingForm.Epoch = NNTParameters.Epoch;
+            trainingForm.BatchSize = NNTParameters.BatchSize;
+            trainingForm.Optimizer = NNTParameters.Optimizer;
+            trainingForm.TypeOfTraining = NNTParameters.TypeOfTraining;
 
-        
-        NavManager.NavigateTo("/train/Processing");
+            foreach (var layer in NNTParameters.Layers)
+            {
+                trainingForm.Layers.Add(layer.name + "," + layer.P1 + "," + layer.P2);
+            }
 
-        // calls API asynchronously
-        try
-        {
             var response = await Http.PostAsJsonAsync("api/NeuralNetwork/start", trainingForm);
 
             if (response.IsSuccessStatusCode)
             {
+                var result = await response.Content.ReadFromJsonAsync<dynamic>();
                 Snackbar.Add($"Training started!", Severity.Success);
+                NavManager.NavigateTo("/train/Processing");
             }
             else
             {
                 Snackbar.Add("Failed to start training.", Severity.Error);
             }
         }
-        catch (Exception ex)
-        {
-            Snackbar.Add("Error while starting the training: " + ex.Message, Severity.Error);
-        }
+        
     }
 }
